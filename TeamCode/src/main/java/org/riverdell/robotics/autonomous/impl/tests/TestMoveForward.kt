@@ -3,43 +3,25 @@ package org.riverdell.robotics.autonomous.impl.tests
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import io.liftgate.robotics.mono.pipeline.single
 import org.riverdell.robotics.autonomous.HypnoticAuto
+import org.riverdell.robotics.autonomous.movement.MecanumTranslations
+import org.riverdell.robotics.autonomous.movement.PositionChangeAction
+import org.riverdell.robotics.autonomous.movement.PositionChangeActionEndResult
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
-import org.riverdell.robotics.autonomous.movement.degrees
-import org.riverdell.robotics.autonomous.movement.navigatePurePursuit
-import org.riverdell.robotics.autonomous.movement.navigateToPosition
-import org.riverdell.robotics.autonomous.movement.purePursuitNavigateTo
-import org.riverdell.robotics.autonomous.movement.purepursuit.FieldWaypoint
 
-@Autonomous(name = "Test | Move Forward", group = "Test")
-class TestMoveForward : HypnoticAuto({ opMode ->
-    navigateToPosition(
-        Pose(
-            0.0,
-            0.0,
-            0.0
-        )
-    )
-    navigatePurePursuit(
-        FieldWaypoint(
-            Pose(0.0, 0.0, 0.degrees),
-            15.0
-        ),
-        FieldWaypoint(
-            Pose(0.0, -40.0, 0.degrees),
-            15.0
-        )
-    )
+@Autonomous(name = "Test | Do Nothing", group = "Test")
+class DoNothing : HypnoticAuto({ opMode ->
+    single("do nothing") {
+        val targetPose = Pose()
+        val positionChangeAction = PositionChangeAction(targetPose, this.parent)
+        var robotPose: Pose
+        while (true) {
+            if (instance.isStopRequested) {
+                this.parent.terminateMidExecution()
+            }
 
-    single("move forward and backward") {
-        purePursuitNavigateTo(
-            FieldWaypoint(
-                Pose(0.0, 0.0, 0.degrees),
-                15.0
-            ),
-            FieldWaypoint(
-                Pose(0.0, -40.0, 0.degrees),
-                15.0
-            ),
-        )
+            robotPose = instance.robot.drivetrain.localizer.pose
+
+            positionChangeAction.getPower(robotPose, targetPose)
+        }
     }
 })

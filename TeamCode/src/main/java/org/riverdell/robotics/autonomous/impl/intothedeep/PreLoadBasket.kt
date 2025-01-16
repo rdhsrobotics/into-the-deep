@@ -102,19 +102,19 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
     // preload
     depositToHighBasket(initial = true)
 
-    val lastPickup = Pose(52.0, 6.0, (180).degrees)
+    val lastPickup = Pose(47.0, 0.5, (180).degrees)
     val pickupPositions = listOf(
-        GroundPickupPosition(pose = Pose(13.25, 18.5, (90.0).degrees)),
-        GroundPickupPosition(pose = Pose(13.25, 34.0, (90.0).degrees)),
+        GroundPickupPosition(pose = Pose(14.5, 18.5, (90.0).degrees)),
+        GroundPickupPosition(pose = Pose(14.5, 34.0, (90.0).degrees)),
         GroundPickupPosition(
             pose = lastPickup,
             extendoMode = true,
-            purePursuitPoints = listOf(
-                FieldWaypoint(depositHighBucket, 25.0),
-                FieldWaypoint(Pose(44.67, 3.30, (180.0).degrees), 25.0),
-                FieldWaypoint(Pose(55.0, 4.60, (180.0).degrees), 20.0),
-                FieldWaypoint(lastPickup, 15.0),
-            ),
+//            purePursuitPoints = listOf(
+//                FieldWaypoint(depositHighBucket, 25.0),
+//                FieldWaypoint(Pose(44.67, 3.30, (180.0).degrees), 25.0),
+//                FieldWaypoint(Pose(55.0, 4.60, (180.0).degrees), 20.0),
+//                FieldWaypoint(lastPickup, 15.0),
+//            ),
             wristState = WristState.Perpendicular
         ),
     )
@@ -132,8 +132,8 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
 
         purePursuitNavigateTo(*parkSubmersible.toTypedArray()) {
             withAutomaticDeath(9000.0)
-            withCustomMaxTranslationalSpeed(0.3)
-            withCustomMaxRotationalSpeed(0.3)
+            withCustomMaxTranslationalSpeed(0.5)
+            withCustomMaxRotationalSpeed(0.5)
         }
     }
 })

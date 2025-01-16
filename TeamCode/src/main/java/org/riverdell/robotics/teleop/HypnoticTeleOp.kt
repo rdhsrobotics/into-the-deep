@@ -144,7 +144,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     }
                     .repeatedlyWhilePressed()
 
-                where(ButtonType.DPadRight)
+                where(ButtonType.BumperLeft)
                     .onlyWhen {
                         intakeComposite.state == InteractionCompositeState.Outtaking ||
                                 intakeComposite.state == InteractionCompositeState.OuttakeReady
@@ -188,7 +188,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     }
                     .whenPressedOnce()
 
-                where(ButtonType.DPadUp)
+                where(ButtonType.BumperRight)
                     .onlyWhen { intakeComposite.state == InteractionCompositeState.OuttakeReady }
                     .triggers {
                         intakeComposite.initialOuttake()

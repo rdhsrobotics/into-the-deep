@@ -49,8 +49,16 @@ abstract class HypnoticAuto(
                    drivetrain.voltage()
                )
                multipleTelemetry.addData(
-                   "IMU",
+                   "Heading",
                    drivetrain.imu().getYaw(AngleUnit.DEGREES)
+               )
+               multipleTelemetry.addData(
+                   "X Position Error",
+                   0.0
+               )
+               multipleTelemetry.addData(
+                   "Y Position Error",
+                   0.0
                )
                multipleTelemetry.addData(
                    "Pose",
@@ -89,26 +97,28 @@ abstract class HypnoticAuto(
                {
                    imuProxy.allPeriodic()
                    drivetrain.localizer.update()
+
                }
            }
 
            thread {
                while (!isStopRequested)
                {
-                   multipleTelemetry.addLine("Alternative IMU: ${drivetrain.alternativeImu().getYaw(AngleUnit.DEGREES)}")
-                   multipleTelemetry.addLine("Normal IMU: ${drivetrain.imu().getYaw(AngleUnit.DEGREES)}")
-
-                   multipleTelemetry.addData(
-                       "Pose",
-                       "Pose(${
-                           "%.2f".format(drivetrain.localizer.pose.x.toFloat())
-                       }, ${
-                           "%.2f".format(drivetrain.localizer.pose.y.toFloat())
-                       }, (${
-                           "%.2f".format(drivetrain.imu().getYaw(AngleUnit.DEGREES).toFloat())
-                       }).degrees)"
-                   )
-                   multipleTelemetry.update()
+//                   multipleTelemetry.addLine("Alternative IMU: ${drivetrain.alternativeImu().getYaw(AngleUnit.DEGREES)}")
+//                   multipleTelemetry.addLine("Normal IMU: ${drivetrain.imu().getYaw(AngleUnit.DEGREES)}")
+//
+//                   multipleTelemetry.addData(
+//                       "Pose",
+//                       "Pose(${
+//                           "%.2f".format(drivetrain.localizer.pose.x.toFloat())
+//                       }, ${
+//                           "%.2f".format(drivetrain.localizer.pose.y.toFloat())
+//                       }, (${
+//                           "%.2f".format(drivetrain.imu().getYaw(AngleUnit.DEGREES).toFloat())
+//                       }).degrees)"
+//                   )
+//
+//                   multipleTelemetry.update()
                }
            }
 
@@ -119,7 +129,8 @@ abstract class HypnoticAuto(
                        runPeriodics()
                    }.onFailure {
                        it.printStackTrace()
-                   }/*
+                   }
+                   /*
 *//*
                    if (intakeComposite.state == InteractionCompositeState.InProgress) {
                        val timeInProgress = System.currentTimeMillis() - intakeComposite.attemptTime
@@ -164,10 +175,7 @@ abstract class HypnoticAuto(
                        )
                    }
 //
-//                   multipleTelemetry.addData(
-//                       "Period",
-//                       PositionChangeAction.xController.period
-//                   )
+//
 
                    multipleTelemetry.addEssentialLines()
                    multipleTelemetry.update()*/

@@ -74,7 +74,7 @@ public class TwoWheelLocalizer extends TwoTrackingWheelLocalizer {
 
     @Override
     public double getHeading() {
-        return hypnoticRobot.getDrivetrain().imu().getYaw(AngleUnit.RADIANS);
+        return hypnoticRobot.getDrivetrain().alternativeImu().getYaw(AngleUnit.RADIANS);
     }
 
     @NonNull

@@ -16,7 +16,7 @@ import java.util.LinkedList;
  */
 public class PIDFController {
 
-    private double kP, kI, kD, v_Static; // No F term, replaced it with a v_Static term which represents speed at which static friction takes over
+    private double kP, kI, kD, kF;
     private double setPoint;
     private double measuredValue;
     private double minIntegral, maxIntegral;
@@ -26,6 +26,7 @@ public class PIDFController {
 
     private double totalError;
     private double prevErrorVal;
+    private boolean useAverageVelocity;
 
     private double errorTolerance_p = 0.05;
     private double errorTolerance_v = Double.POSITIVE_INFINITY;
@@ -33,15 +34,21 @@ public class PIDFController {
     private double lastTimeStamp;
     private double period;
     public double averageVelocity;
-    private LinkedList<Double> prevVels;
-    private double sum;
+    private final LinkedList<double[]> prevVels;
 
     /**
      * The base constructor for the PIDF controller
      */
-    public PIDFController(double kp, double ki, double kd, double v_static) {
-        this(kp, ki, kd, v_static, 0, 0);
+
+    public PIDFController(double kp, double ki, double kd, double kf, boolean useAverageVelocity) {
+        this(kp, ki, kd, kf, 0, 0, useAverageVelocity);
     }
+
+    public PIDFController(double kp, double ki, double kd, double kf) {
+        this(kp, ki, kd, kf, 0, 0, true);
+    }
+
+
 
     /**
      * This is the full constructor for the PIDF controller. Our PIDF controller
@@ -52,11 +59,11 @@ public class PIDFController {
      * @param pv The measured value of he pid control loop. We want sp = pv, or to the degree
      *           such that sp - pv, or e(t) < tolerance.
      */
-    public PIDFController(double kp, double ki, double kd, double v_static, double sp, double pv) {
+    public PIDFController(double kp, double ki, double kd, double kf, double sp, double pv, boolean useAverageVelocity) {
         kP = kp;
         kI = ki;
         kD = kd;
-        v_Static = v_static;
+        kF = kf;
 
         setPoint = sp;
         measuredValue = pv;
@@ -68,6 +75,7 @@ public class PIDFController {
         period = 0;
         prevVels = new LinkedList<>();
         averageVelocity = 0;
+        this.useAverageVelocity = useAverageVelocity;
 
         errorVal_p = setPoint - measuredValue;
         reset();
@@ -114,9 +122,11 @@ public class PIDFController {
      * @param sp The desired setpoint.
      */
     public void setSetPoint(double sp) {
-        setPoint = sp;
-        errorVal_p = setPoint - measuredValue;
-        errorVal_v = (errorVal_p - prevErrorVal) / period;
+        if (sp != setPoint) {
+            setPoint = sp;
+            errorVal_p = setPoint - measuredValue;
+            //errorVal_v = (errorVal_p - prevErrorVal) / period;
+        }
     }
 
     /**
@@ -134,7 +144,7 @@ public class PIDFController {
      * @return the PIDF coefficients
      */
     public double[] getCoefficients() {
-        return new double[]{kP, kI, kD, v_Static};
+        return new double[]{kP, kI, kD, kF};
     }
 
     /**
@@ -203,21 +213,29 @@ public class PIDFController {
             measuredValue = pv;
         }
 
-        if (Math.abs(period) > 1E-6) {
-            prevVels.add((errorVal_p - prevErrorVal) / period);
-            if (prevVels.size() > 3) {
+        if (Math.abs(period) > 1E-8) {
+            //stores up to 6 previous values of velocity and its period
+            prevVels.add(new double[]{(errorVal_p - prevErrorVal) / period, period});
+            if (prevVels.size() > 5) {
                 prevVels.pop();
             }
-            sum = 0;
-            for (double prevPeriod : prevVels) {
-                sum += prevPeriod;
+            //quadratic recency biased average: 100 ms outdated is valued 4 times less than current
+            double sum = 0;
+            double periodSum = 0.0;
+            double denominator = 0.0;
+            double recencyWeight;
+            for (int i = 0; i < prevVels.size(); i++) {
+                recencyWeight = 1/(0.0003*periodSum*periodSum + 1);
+                sum += prevVels.get(i)[0]*recencyWeight;
+                denominator += recencyWeight;
+                periodSum += prevVels.get(i)[1];
             }
+            averageVelocity = sum/denominator;
 
-            averageVelocity = -sum/prevVels.size();
-            errorVal_v = (errorVal_p - prevErrorVal) / period;
-        } else {
+            errorVal_v = (useAverageVelocity ? averageVelocity : (errorVal_p - prevErrorVal) / period);
+        }/* else {
             errorVal_v = 0;
-        }
+        }*/
 
         /*
         if total error is the integral from 0 to t of e(t')dt', and
@@ -227,14 +245,14 @@ public class PIDFController {
         totalError = totalError < minIntegral ? minIntegral : Math.min(maxIntegral, totalError);
 
         // returns u(t)
-        return kP * errorVal_p + kI * totalError + kD * (errorVal_v - Math.signum(errorVal_v)* v_Static);
+        return kP * errorVal_p + kI * totalError + kD * (errorVal_v);
     }
 
     public void setPIDF(double kp, double ki, double kd, double kf) {
         kP = kp;
         kI = ki;
         kD = kd;
-        v_Static = kf;
+        kF = kf;
     }
 
     public void setIntegrationBounds(double integralMin, double integralMax) {
@@ -259,7 +277,7 @@ public class PIDFController {
     }
 
     public void setF(double kf) {
-        v_Static = kf;
+        kF = kf;
     }
 
     public double getP() {
@@ -275,7 +293,7 @@ public class PIDFController {
     }
 
     public double getF() {
-        return v_Static;
+        return kF;
     }
 
     public double getPeriod() {

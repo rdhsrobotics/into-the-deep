@@ -25,23 +25,25 @@ public class PositionChangeAction {
     private final HypnoticAuto instance;
     private final RootExecutionGroup executionGroup;
 
-    public double K_STATIC = 1.85;
+    //public double K_STATIC = 1.85;
 
-    public static double strafeP = 0.04;
-    public static double strafeD = 0.0025;
-    public static double strafe_v_static = 12;
+    public static double strafeP = 0.12;
+    public static double strafeD = 0.0145;
 
-    public static double straightP = 0.0135;
-    public static double straightD = 0.0022;
-    public static double straight_v_static = 8;
+    public static double straightP = 0.09;
+    public static double straightD = 0.0145;
 
-    public static double hP = 0.4;
-    public static double hD = 0.02;
-    public static double h_v_static = 0.6;
+    public static double hP = 1.95;
+    public static double hI = 0.0;
+    public static double hD = 0.25;
 
-    public double MINIMUM_TRANSLATIONAL_DIFF_FROM_TARGET = 0.75;
-    public double MINIMUM_ROTATIONAL_DIFF_FROM_TARGET = 0.02;
-    public double AT_TARGET_AUTOMATIC_DEATH = 200;
+    public static double TURN_POWER_BOOST = 0.06;
+    public static double STRAFE_POWER_BOOST = 0.18;
+    public static double STRAIGHT_POWER_BOOST = 0.05;
+
+    public double MINIMUM_TRANSLATIONAL_DIFF_FROM_TARGET = 0.7;
+    public double MINIMUM_ROTATIONAL_DIFF_FROM_TARGET = 0.7;
+    public double AT_TARGET_AUTOMATIC_DEATH = 225;
 
     public static PIDFController strafeController;
     public static PIDFController straightController;
@@ -68,14 +70,13 @@ public class PositionChangeAction {
 
 //        populateDefaults();
 
-        strafeController = new PIDFController(strafeP, 0.0, strafeD, strafe_v_static);
-        straightController = new PIDFController(straightP, 0.0, straightD, straight_v_static);
-        hController = new PIDFController(hP, 0.0, hD, h_v_static);
+        strafeController = new PIDFController(strafeP, 0.0, strafeD, 0.0);
+        straightController = new PIDFController(straightP, 0.0, straightD, 0.0);
+        hController = new PIDFController(hP, hI, hD, 0.0, false);
     }
 
     private void populateDefaults() {
         final NavigationConfig config = ((HypnoticAuto.HypnoticAutoRobot) instance.getRobot()).getNavigationConfig();
-        K_STATIC = config.getKStatic();
 
         MINIMUM_ROTATIONAL_DIFF_FROM_TARGET = config.getMinimumRotationalDifferenceFromTarget();
         MINIMUM_TRANSLATIONAL_DIFF_FROM_TARGET = config.getMinimumTranslationDifferenceFromTarget();
@@ -202,7 +203,11 @@ public class PositionChangeAction {
             }
 
             Pose powers = getPower(robotPose, targetPose);
-            MecanumTranslations.getPowers(powers).propagate(instance);
+            MecanumTranslations.getPowers(powers,
+                    straightController.getVelocityError(),
+                    strafeController.getVelocityError(),
+                    hController.getVelocityError()
+            ).propagate(instance);
         }
     }
 
@@ -251,7 +256,7 @@ public class PositionChangeAction {
         Pose delta = targetPose.subtract(currentPose);
 
         if ((delta.toVec2D().magnitude() > MINIMUM_TRANSLATIONAL_DIFF_FROM_TARGET ||
-                Math.abs(delta.getHeading()) > MINIMUM_ROTATIONAL_DIFF_FROM_TARGET)) {
+                Math.abs(Math.toDegrees(delta.getHeading())) > MINIMUM_ROTATIONAL_DIFF_FROM_TARGET)) {
             atTargetTimer.reset();
         }
 
@@ -263,16 +268,54 @@ public class PositionChangeAction {
     }
 
     public @NotNull Pose getPower(@NotNull Pose robotPose, @NotNull Pose targetPose) {
-        double headingError = targetPose.getHeading() - robotPose.getHeading();
-        if (headingError > Math.PI) targetPose.setHeading(targetPose.getHeading() - 2 * Math.PI);
-        if (headingError < -Math.PI) targetPose.setHeading(targetPose.getHeading() + 2 * Math.PI);
+        double targetHeading = targetPose.getHeading();
+        double robotHeading = robotPose.getHeading();
+        double headingError = robotHeading - targetHeading;
+
+        if (headingError > Math.PI) headingError -= 2 * Math.PI;
+        if (headingError < -Math.PI) headingError += 2 * Math.PI;
+
+
+//        if (headingError > Math.PI) targetPose.setHeading(targetPose.getHeading() - 2 * Math.PI);
+//        if (headingError < -Math.PI) targetPose.setHeading(targetPose.getHeading() + 2 * Math.PI);
+
 
         Vector2d error = new Vector2d(targetPose.x - robotPose.x, targetPose.y - robotPose.y).rotateBy(-Math.toDegrees(robotPose.getHeading()));
 
-        double xPower = strafeController.calculate(robotPose.x, robotPose.x + error.getX());
-        double yPower = straightController.calculate(robotPose.y, robotPose.y + error.getY());
+        double xPower = strafeController.calculate(-error.getX(), 0);
+        double yPower = straightController.calculate(-error.getY(), 0);
+        double hPower = hController.calculate(headingError, 0);
 
-        double hPower = hController.calculate(robotPose.getHeading(), targetPose.getHeading());
+        this.instance.getRobot().getMultipleTelemetry().addData(
+                "X Position Error",
+                PositionChangeAction.strafeController.getPositionError()
+        );
+        this.instance.getRobot().getMultipleTelemetry().addData(
+                "Y Position Error",
+                PositionChangeAction.straightController.getPositionError()
+        );
+        this.instance.getRobot().getMultipleTelemetry().addData(
+                "X Velocity Error",
+                PositionChangeAction.strafeController.getVelocityError()
+        );
+        this.instance.getRobot().getMultipleTelemetry().addData(
+                "Y Velocity Error",
+                PositionChangeAction.straightController.getVelocityError()
+        );
+        this.instance.getRobot().getMultipleTelemetry().addData(
+                "H Velocity Error",
+                PositionChangeAction.hController.getVelocityError()
+        );
+        this.instance.getRobot().getMultipleTelemetry().addData(
+                "Period",
+                strafeController.getPeriod()
+        );
+        this.instance.getRobot().getMultipleTelemetry().addData(
+                "Heading",
+                Math.toDegrees(headingError)
+        );
+        this.instance.getRobot().getMultipleTelemetry().update();
+
 
 //        double x_rotated = xPower * Math.cos(-robotPose.getHeading()) - yPower * Math.sin(-robotPose.getHeading());
 //        double y_rotated = xPower * Math.sin(-robotPose.getHeading()) + yPower * Math.cos(-robotPose.getHeading());

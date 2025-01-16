@@ -4,8 +4,8 @@ import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class TestConfig {
-    public static double x = 50;
-    public static double y = 100;
-    public static double turn = 180;
-    public static double automaticDeath = 5000;
+    public static double x = 0;
+    public static double y = 0;
+    public static double turn = 90;
+    public static double automaticDeath = 50000;
 }
