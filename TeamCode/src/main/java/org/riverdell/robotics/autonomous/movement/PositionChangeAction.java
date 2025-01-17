@@ -27,23 +27,26 @@ public class PositionChangeAction {
 
     //public double K_STATIC = 1.85;
 
-    public static double strafeP = 0.12;
-    public static double strafeD = 0.0145;
+    public static double strafeP = 0.11;
+    public static double strafeD = 0.012;
 
-    public static double straightP = 0.09;
-    public static double straightD = 0.0145;
+    public static double straightP = 0.075;
+    public static double straightD = 0.01;
 
-    public static double hP = 1.95;
+    public static double hP = 1.55;
     public static double hI = 0.0;
-    public static double hD = 0.25;
+    public static double hD = 0.255;
 
-    public static double TURN_POWER_BOOST = 0.06;
+    public static double TURN_POWER_BOOST = 0.095;
     public static double STRAFE_POWER_BOOST = 0.18;
-    public static double STRAIGHT_POWER_BOOST = 0.05;
+    public static double STRAIGHT_POWER_BOOST = 0.03;
+
+    //public static double TURN_PREDICTION_MILLIS = 2.5;
+    public static double TURN_MAX_PREDICTION = 5;
 
     public double MINIMUM_TRANSLATIONAL_DIFF_FROM_TARGET = 0.7;
-    public double MINIMUM_ROTATIONAL_DIFF_FROM_TARGET = 0.7;
-    public double AT_TARGET_AUTOMATIC_DEATH = 225;
+    public double MINIMUM_ROTATIONAL_DIFF_FROM_TARGET = 1.25;
+    public double AT_TARGET_AUTOMATIC_DEATH = 250;
 
     public static PIDFController strafeController;
     public static PIDFController straightController;
@@ -72,7 +75,7 @@ public class PositionChangeAction {
 
         strafeController = new PIDFController(strafeP, 0.0, strafeD, 0.0);
         straightController = new PIDFController(straightP, 0.0, straightD, 0.0);
-        hController = new PIDFController(hP, hI, hD, 0.0, false);
+        hController = new PIDFController(hP, hI, hD, 0.0);
     }
 
     private void populateDefaults() {
@@ -185,6 +188,8 @@ public class PositionChangeAction {
             }
 
             Pose previousPose = this.previousPose;
+            instance.getRobot().getImuProxy().allPeriodic();
+            instance.getRobot().getDrivetrain().getLocalizer().update();
             Pose robotPose = instance.getRobot().getDrivetrain().getLocalizer().getPose();
             this.previousPose = robotPose;
 
@@ -196,18 +201,18 @@ public class PositionChangeAction {
                 return;
             }
 
-            PositionChangeActionEndResult result = getState(robotPose, previousPose, targetPose);
-            if (result != null) {
-                finish(result);
-                return;
-            }
-
             Pose powers = getPower(robotPose, targetPose);
             MecanumTranslations.getPowers(powers,
                     straightController.getVelocityError(),
                     strafeController.getVelocityError(),
                     hController.getVelocityError()
             ).propagate(instance);
+
+            PositionChangeActionEndResult result = getState(robotPose, previousPose, targetPose);
+            if (result != null) {
+                finish(result);
+                return;
+            }
         }
     }
 
@@ -269,7 +274,10 @@ public class PositionChangeAction {
 
     public @NotNull Pose getPower(@NotNull Pose robotPose, @NotNull Pose targetPose) {
         double targetHeading = targetPose.getHeading();
-        double robotHeading = robotPose.getHeading();
+        double robotHeading = Math.toRadians(instance.getRobot().getImuProxy().alternativeImu().getYaw());
+        double imuLatencyMillis = (System.nanoTime() - instance.getRobot().getImuProxy().alternativeImu().getAcquisitionTime()) / 1E6;
+
+        robotHeading += imuLatencyMillis/1000 * Range.clip(hController.getVelocityError(), -TURN_MAX_PREDICTION, TURN_MAX_PREDICTION); // correct for IMU latency, velocity is in deg/s
         double headingError = robotHeading - targetHeading;
 
         if (headingError > Math.PI) headingError -= 2 * Math.PI;
@@ -309,6 +317,10 @@ public class PositionChangeAction {
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "Period",
                 strafeController.getPeriod()
+        );
+        this.instance.getRobot().getMultipleTelemetry().addData(
+                "IMU Latency",
+                imuLatencyMillis
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "Heading",

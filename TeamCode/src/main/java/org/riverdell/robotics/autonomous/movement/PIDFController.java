@@ -232,7 +232,13 @@ public class PIDFController {
             }
             averageVelocity = sum/denominator;
 
-            errorVal_v = (useAverageVelocity ? averageVelocity : (errorVal_p - prevErrorVal) / period);
+            if (useAverageVelocity) {
+                errorVal_v = averageVelocity;
+            } else {
+                if (errorVal_p - prevErrorVal != 0) {
+                    errorVal_v = (errorVal_p - prevErrorVal) / period;
+                }
+            }
         }/* else {
             errorVal_v = 0;
         }*/
@@ -245,7 +251,7 @@ public class PIDFController {
         totalError = totalError < minIntegral ? minIntegral : Math.min(maxIntegral, totalError);
 
         // returns u(t)
-        return kP * errorVal_p + kI * totalError + kD * (errorVal_v);
+        return kP * errorVal_p + kI * totalError + kD * errorVal_v;
     }
 
     public void setPIDF(double kp, double ki, double kd, double kf) {

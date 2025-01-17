@@ -102,7 +102,7 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
     // preload
     depositToHighBasket(initial = true)
 
-    val lastPickup = Pose(47.0, 0.5, (180).degrees)
+    val lastPickup = Pose(47.0, 1.7, (180).degrees)
     val pickupPositions = listOf(
         GroundPickupPosition(pose = Pose(14.5, 18.5, (90.0).degrees)),
         GroundPickupPosition(pose = Pose(14.5, 34.0, (90.0).degrees)),

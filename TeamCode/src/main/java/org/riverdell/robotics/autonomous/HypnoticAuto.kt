@@ -5,10 +5,8 @@ import io.liftgate.robotics.mono.pipeline.RootExecutionGroup
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 import org.riverdell.robotics.HypnoticOpMode
-import org.riverdell.robotics.autonomous.movement.konfig.NavigationConfig
 import org.riverdell.robotics.HypnoticRobot
-import org.riverdell.robotics.autonomous.movement.PositionChangeAction
-import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
+import org.riverdell.robotics.autonomous.movement.konfig.NavigationConfig
 import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
 import kotlin.concurrent.thread
 
@@ -85,7 +83,10 @@ abstract class HypnoticAuto(
                    "Period",
                    0.0
                )
-
+               multipleTelemetry.addData(
+                   "IMU Latency",
+                   (System.nanoTime() - imuProxy.alternativeImu().acquisitionTime)/1E6
+               )
                multipleTelemetry.update()
            }
        }
@@ -95,9 +96,8 @@ abstract class HypnoticAuto(
            thread {
                while (!isStopRequested)
                {
-                   imuProxy.allPeriodic()
-                   drivetrain.localizer.update()
-
+                   //imuProxy.allPeriodic()
+                   //drivetrain.localizer.update()
                }
            }
 
