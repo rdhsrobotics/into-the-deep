@@ -145,7 +145,7 @@ public class BadWolfOpMode extends LinearOpMode {
             } else if ((gamepad1.dpad_down || gamepad2.dpad_down)) {
                 wrist.setPosition(0.47); //reset to legal point
             } else if ((gamepad1.dpad_up || gamepad2.dpad_up)) {
-                wrist.setPosition(0.8); //Horizontal pickup
+                wrist.setPosition(0.8); //Horizontal pickup point
             }
 
             if (gamepad1.a || gamepad2.a) {
