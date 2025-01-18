@@ -3,20 +3,10 @@ package org.riverdell.robotics.teleop;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
-import com.arcrobotics.ftclib.gamepad.GamepadEx;
-import io.liftgate.robotics.mono.gamepad.ButtonType;
-import org.riverdell.robotics.HypnoticOpMode;
-import org.riverdell.robotics.HypnoticRobot;
-import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState;
-import org.riverdell.robotics.subsystems.intake.composite.IntakeConfig;
-import org.riverdell.robotics.subsystems.outtake.ClawState;
-import org.riverdell.robotics.subsystems.outtake.OuttakeLevel;
-import org.riverdell.robotics.subsystems.outtake.PivotState;
-import java.util.concurrent.CompletableFuture;
+
 
 
 @TeleOp(name="BadWolf OpMode", group="Linear OpMode")
@@ -31,7 +21,6 @@ public class BadWolfOpMode extends LinearOpMode {
     private Servo pivotRight = null;
     private Servo pivotLeft = null;
     private Servo claw = null;
-    private boolean clawOpen = false;//this is to determine the cla's state (for da toggle)
     private Servo wrist = null; // New servo variable
     private double speedMultiplier = 0.3; // Speed multiplier with default value
 
@@ -41,7 +30,7 @@ public class BadWolfOpMode extends LinearOpMode {
         telemetry.update();
 
         // Initialize hardware variables
-        frontLeft  = hardwareMap.get(DcMotor.class, "frontLeft");
+        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
@@ -69,8 +58,8 @@ public class BadWolfOpMode extends LinearOpMode {
         backRight.setDirection(DcMotor.Direction.FORWARD);
 
         // Set initial servo positions
-        pivotRight.setPosition(0.75); // Initial position for right elevator servo
-        pivotLeft.setPosition(0.25);  // Initial position for left elevator servo
+        pivotRight.setPosition(0.65); // Initial position for right elevator servo
+        pivotLeft.setPosition(0.35);  // Initial position for left elevator servo
         claw.setPosition(0);      // Initial position for master claw
         wrist.setPosition(0.47);       // Initial position for claw rotation
 
@@ -128,8 +117,8 @@ public class BadWolfOpMode extends LinearOpMode {
                 liftRight.setPower(-0.9);
                 liftLeft.setPower(-0.9);
             } else {
-                liftRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                liftLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                liftRight.setPower(0);
+                liftLeft.setPower(0);
             }
 
             // Claw rotation control with gamepad2 right joystick
@@ -144,9 +133,9 @@ public class BadWolfOpMode extends LinearOpMode {
                 wrist.setPosition(Range.clip(wrist.getPosition() + clawIncrement, 0.0, 1.0));
             }
 
-            if (gamepad1.right_trigger>0.2) {
-                pivotRight.setPosition(0.6);
-                pivotLeft.setPosition(0.4);
+            if (gamepad1.right_trigger > 0.2) {
+                pivotRight.setPosition(0.55);
+                pivotLeft.setPosition(0.45);
             }
 
             if (gamepad1.dpad_left || gamepad2.dpad_left) {
@@ -160,33 +149,32 @@ public class BadWolfOpMode extends LinearOpMode {
             }
 
             if (gamepad1.a || gamepad2.a) {
-                // Toggle the claw's state
-                clawOpen = !clawOpen;
-                claw.setPosition(clawOpen ? 0.5 : 0.0);
+                claw.setPosition(0.5);
                 // Rumble both gamepads
-                gamepad1.rumble(0.2, 0.2, 100); // Left and right rumbling for fun.
-                gamepad2.rumble(0.2, 0.2, 100);
+                gamepad1.rumble(0.5, 0.5, 100); // Left and right rumbling thing n the controller at full strength for 1 sec cuz why not
+                gamepad2.rumble(0.5, 0.5, 100);
+            } else {
+                claw.setPosition(0.0);//grip of the claw
             }
 
             if (gamepad1.b || gamepad2.b) {
                 // reset everything and go to default position
-                pivotRight.setPosition(0.54);
-                pivotLeft.setPosition(0.46);
+                pivotRight.setPosition(0.5);
+                pivotLeft.setPosition(0.5);
                 wrist.setPosition(0.47);
                 claw.setPosition(0.0);
             }
 
             if (gamepad1.y || gamepad2.y) {
                 // Move servos to specific positions. This is the hover point
-                pivotRight.setPosition(0.24);//real low to hover. Make higher to hover higher and make lower to hover lower
-                pivotLeft.setPosition(0.77);//these two numbers should always add up to hundred. otherwise u are breaking the servos
-                claw.setPosition(1.0);
+                pivotRight.setPosition(0.2);//real low to hover. Make higher to hover higher and make lower to hover lower
+                pivotLeft.setPosition(0.8);//these two numbers should always add up to hundred. otherwise u are breaking the servos
             }
 
             if (gamepad1.x || gamepad2.x) {
                 // Check if servos are in the correct positions for to perform a grab
                 //so if y is pressed and then x is pressed it performs a grab.
-                if (pivotRight.getPosition() == 0.24 && pivotLeft.getPosition() == 0.77) {
+                if (pivotRight.getPosition() == 0.2 && pivotLeft.getPosition() == 0.8) {
                     performGrab();
                 }
             }
@@ -201,11 +189,12 @@ public class BadWolfOpMode extends LinearOpMode {
             telemetry.update();
         }
     }
+
     private void performGrab() {
         ElapsedTime timer = new ElapsedTime();
 
-        // Open claw to position 0.4
-        claw.setPosition(0.5);
+        // Open claw to position 0.45
+        claw.setPosition(0.45);
         timer.reset();
         while (timer.seconds() < 0.05 && opModeIsActive()) {
             // Wait for 0.1 seconds
@@ -214,10 +203,10 @@ public class BadWolfOpMode extends LinearOpMode {
         }
 
         // Move servos to new positions
-        pivotRight.setPosition(0.24);
-        pivotLeft.setPosition(0.73);
+        pivotRight.setPosition(0.14);
+        pivotLeft.setPosition(0.86);
         timer.reset();
-        while (timer.seconds() < 0.0001 && opModeIsActive()) {
+        while (timer.seconds() < 0.1 && opModeIsActive()) {
             // Wait for 0.5 second
             telemetry.addData("Grab Step", "Moving Servos: %.2f", timer.seconds());
             telemetry.update();
@@ -227,22 +216,21 @@ public class BadWolfOpMode extends LinearOpMode {
         claw.setPosition(0);
 
         // Wait until the claw is closed
-        while (claw.getPosition() != 0 && opModeIsActive()) {
+        while (Math.abs(claw.getPosition() - 0) > 0.01 && opModeIsActive()) {
             telemetry.addData("Grab Step", "Closing Claw");
             telemetry.update();
         }
 
         // Wait for 0.3 seconds before setting servos
         timer.reset();
-        while (timer.seconds() < 0.3 && opModeIsActive()) {
+        while (timer.seconds() < 0.2 && opModeIsActive()) {
             telemetry.addData("Grab Step", "Waiting before setting servos: %.2f", timer.seconds());
             telemetry.update();
         }
 
-        // Set right and left servo positions to 1 and 0 respectively
-        pivotRight.setPosition(0.3);
-        pivotLeft.setPosition(0.7);
-//        wrist.setPosition(0.47); //so that the grab can be done again if it did not work.
+        // Set right and left servo positions to 0.5
+        pivotRight.setPosition(0.5);
+        pivotLeft.setPosition(0.5);
         claw.setPosition(0);
     }
 }
