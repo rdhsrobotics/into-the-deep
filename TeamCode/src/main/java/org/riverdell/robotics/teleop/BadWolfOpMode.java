@@ -58,8 +58,8 @@ public class BadWolfOpMode extends LinearOpMode {
         backRight.setDirection(DcMotor.Direction.FORWARD);
 
         // Set initial servo positions
-        pivotRight.setPosition(0.65); // Initial position for right elevator servo
-        pivotLeft.setPosition(0.35);  // Initial position for left elevator servo
+        pivotRight.setPosition(0.7); // Initial position for right elevator servo
+        pivotLeft.setPosition(0.3);  // Initial position for left elevator servo
         claw.setPosition(0);      // Initial position for master claw
         wrist.setPosition(0.47);       // Initial position for claw rotation
 
@@ -133,10 +133,14 @@ public class BadWolfOpMode extends LinearOpMode {
                 wrist.setPosition(Range.clip(wrist.getPosition() + clawIncrement, 0.0, 1.0));
             }
 
-            if (gamepad1.right_trigger > 0.2) {
+            if (gamepad1.right_trigger > 0.2) { //scoring
                 pivotRight.setPosition(0.55);
                 pivotLeft.setPosition(0.45);
+            } else if (gamepad2.right_trigger > 0.2) { //scoring
+                pivotRight.setPosition(0.14);
+                pivotLeft.setPosition(0.86);
             }
+
 
             if (gamepad1.dpad_left || gamepad2.dpad_left) {
                 wrist.setPosition(0.64);//diagonal left
@@ -167,14 +171,14 @@ public class BadWolfOpMode extends LinearOpMode {
 
             if (gamepad1.y || gamepad2.y) {
                 // Move servos to specific positions. This is the hover point
-                pivotRight.setPosition(0.2);//real low to hover. Make higher to hover higher and make lower to hover lower
-                pivotLeft.setPosition(0.8);//these two numbers should always add up to hundred. otherwise u are breaking the servos
+                pivotRight.setPosition(0.24);//real low to hover. Make higher to hover higher and make lower to hover lower
+                pivotLeft.setPosition(0.76);//these two numbers should always add up to hundred. otherwise u are breaking the servos
             }
 
             if (gamepad1.x || gamepad2.x) {
                 // Check if servos are in the correct positions for to perform a grab
                 //so if y is pressed and then x is pressed it performs a grab.
-                if (pivotRight.getPosition() == 0.2 && pivotLeft.getPosition() == 0.8) {
+                if (pivotRight.getPosition() == 0.24 && pivotLeft.getPosition() == 0.76) {
                     performGrab();
                 }
             }
@@ -194,7 +198,7 @@ public class BadWolfOpMode extends LinearOpMode {
         ElapsedTime timer = new ElapsedTime();
 
         // Open claw to position 0.45
-        claw.setPosition(0.45);
+        claw.setPosition(0.5);
         timer.reset();
         while (timer.seconds() < 0.05 && opModeIsActive()) {
             // Wait for 0.1 seconds
@@ -203,10 +207,10 @@ public class BadWolfOpMode extends LinearOpMode {
         }
 
         // Move servos to new positions
-        pivotRight.setPosition(0.14);
-        pivotLeft.setPosition(0.86);
+        pivotRight.setPosition(0.16);
+        pivotLeft.setPosition(0.84);
         timer.reset();
-        while (timer.seconds() < 0.1 && opModeIsActive()) {
+        while (timer.seconds() < 0.05 && opModeIsActive()) {
             // Wait for 0.5 second
             telemetry.addData("Grab Step", "Moving Servos: %.2f", timer.seconds());
             telemetry.update();
@@ -223,14 +227,14 @@ public class BadWolfOpMode extends LinearOpMode {
 
         // Wait for 0.3 seconds before setting servos
         timer.reset();
-        while (timer.seconds() < 0.2 && opModeIsActive()) {
+        while (timer.seconds() < 0.2     && opModeIsActive()) {
             telemetry.addData("Grab Step", "Waiting before setting servos: %.2f", timer.seconds());
             telemetry.update();
         }
 
         // Set right and left servo positions to 0.5
-        pivotRight.setPosition(0.5);
-        pivotLeft.setPosition(0.5);
+        pivotRight.setPosition(0.27);
+        pivotLeft.setPosition(0.73);
         claw.setPosition(0);
     }
 }

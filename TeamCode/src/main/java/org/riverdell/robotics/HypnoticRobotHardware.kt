@@ -69,7 +69,7 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
         claw = opMode.hardwareMap.get(ServoImplEx::class.java, "claw")
         claw.position = ClawState.Closed.position
 
-        wrist = opMode.hardwareMap.get(ServoImplEx::class.java, "clawRotation")
+        wrist = opMode.hardwareMap.get(ServoImplEx::class.java, "wrist")
         wrist.position = WristState.Lateral.position
 
         pivotRight = opMode.hardwareMap.get(ServoImplEx::class.java, "pivotRight")
