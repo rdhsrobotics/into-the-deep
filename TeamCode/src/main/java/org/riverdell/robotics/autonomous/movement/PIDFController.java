@@ -306,4 +306,7 @@ public class PIDFController {
         return period;
     }
 
+    public double getLastTimeStamp() {
+        return  lastTimeStamp;
+    }
 }

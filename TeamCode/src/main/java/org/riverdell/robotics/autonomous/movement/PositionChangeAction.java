@@ -11,6 +11,7 @@ import org.riverdell.robotics.autonomous.HypnoticAuto;
 import org.riverdell.robotics.autonomous.movement.geometry.Pose;
 import org.riverdell.robotics.autonomous.movement.konfig.NavigationConfig;
 
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.liftgate.robotics.mono.Mono;
@@ -33,19 +34,19 @@ public class PositionChangeAction {
     public static double straightP = 0.075;
     public static double straightD = 0.01;
 
-    public static double hP = 1.55;
+    public static double hP = 2.2;
     public static double hI = 0.0;
-    public static double hD = 0.255;
+    public static double hD = 0.16;
 
-    public static double TURN_POWER_BOOST = 0.095;
+    public static double TURN_POWER_BOOST = 0.06;
     public static double STRAFE_POWER_BOOST = 0.18;
     public static double STRAIGHT_POWER_BOOST = 0.03;
 
-    //public static double TURN_PREDICTION_MILLIS = 2.5;
-    public static double TURN_MAX_PREDICTION = 5;
+    public static double TURN_PREDICTION_ACCELERATION = 0.000057;
+    public static double TURN_MAX_VELOCITY = 5;
 
     public double MINIMUM_TRANSLATIONAL_DIFF_FROM_TARGET = 0.7;
-    public double MINIMUM_ROTATIONAL_DIFF_FROM_TARGET = 1.25;
+    public double MINIMUM_ROTATIONAL_DIFF_FROM_TARGET = 2.0;
     public double AT_TARGET_AUTOMATIC_DEATH = 250;
 
     public static PIDFController strafeController;
@@ -55,6 +56,9 @@ public class PositionChangeAction {
     private final ElapsedTime activeTimer = new ElapsedTime();
     private final ElapsedTime atTargetTimer = new ElapsedTime();
     private final ElapsedTime stuckProtection = new ElapsedTime();
+
+    private final LinkedList<double[]> prevHPowers = new LinkedList<>();
+    private double prevHPower = 0.0;
 
     private final @Nullable Pose targetPose;
 
@@ -260,39 +264,43 @@ public class PositionChangeAction {
 
         Pose delta = targetPose.subtract(currentPose);
 
-        if ((delta.toVec2D().magnitude() > MINIMUM_TRANSLATIONAL_DIFF_FROM_TARGET ||
-                Math.abs(Math.toDegrees(delta.getHeading())) > MINIMUM_ROTATIONAL_DIFF_FROM_TARGET)) {
-            atTargetTimer.reset();
-        }
-
-        if (atTargetTimer.milliseconds() > AT_TARGET_AUTOMATIC_DEATH) {
+        if (((delta.toVec2D().magnitude() < MINIMUM_TRANSLATIONAL_DIFF_FROM_TARGET &&
+            Math.abs(Math.toDegrees(delta.getHeading())) < MINIMUM_ROTATIONAL_DIFF_FROM_TARGET))
+        && ((Math.abs(hController.getVelocityError()) < 0.25)
+                && (Math.abs(Math.hypot(straightController.getVelocityError(), strafeController.getVelocityError())) < 0.5))) {
             return PositionChangeActionEndResult.Successful;
         }
 
         return null;
     }
 
+    public double predictHeading(double lastPeriodMillis, double imuLatencyMillis, double headingMeasurement, double initialHeadingVelocity) {
+        double maxPower = TURN_PREDICTION_ACCELERATION * instance.robot.getDrivetrain().voltage();
+        double estimatedVelocity = initialHeadingVelocity + (maxPower * prevHPower - (13.0 * TURN_PREDICTION_ACCELERATION / TURN_MAX_VELOCITY)) * lastPeriodMillis;
+        return headingMeasurement + Range.clip(estimatedVelocity * imuLatencyMillis / 1000, -TURN_MAX_VELOCITY, TURN_MAX_VELOCITY);
+    }
+
     public @NotNull Pose getPower(@NotNull Pose robotPose, @NotNull Pose targetPose) {
         double targetHeading = targetPose.getHeading();
-        double robotHeading = Math.toRadians(instance.getRobot().getImuProxy().alternativeImu().getYaw());
-        double imuLatencyMillis = (System.nanoTime() - instance.getRobot().getImuProxy().alternativeImu().getAcquisitionTime()) / 1E6;
+        double currentTime = System.nanoTime();
+        double imuLatencyMillis = (currentTime - instance.getRobot().getImuProxy().alternativeImu().getAcquisitionTime()) / 1E6;
 
-        robotHeading += imuLatencyMillis/1000 * Range.clip(hController.getVelocityError(), -TURN_MAX_PREDICTION, TURN_MAX_PREDICTION); // correct for IMU latency, velocity is in deg/s
+        double robotHeading = Math.toRadians(instance.getRobot().getImuProxy().alternativeImu().getYaw());
+
+        robotHeading = predictHeading((currentTime - hController.getLastTimeStamp()) / 1E6, imuLatencyMillis, robotHeading, hController.getVelocityError());
+        //robotHeading += (imuLatencyMillis/1000) * Range.clip(hController.getVelocityError(), -TURN_MAX_PREDICTION, TURN_MAX_PREDICTION); // correct for IMU latency, velocity is in deg/s
         double headingError = robotHeading - targetHeading;
 
         if (headingError > Math.PI) headingError -= 2 * Math.PI;
         if (headingError < -Math.PI) headingError += 2 * Math.PI;
-
-
-//        if (headingError > Math.PI) targetPose.setHeading(targetPose.getHeading() - 2 * Math.PI);
-//        if (headingError < -Math.PI) targetPose.setHeading(targetPose.getHeading() + 2 * Math.PI);
-
 
         Vector2d error = new Vector2d(targetPose.x - robotPose.x, targetPose.y - robotPose.y).rotateBy(-Math.toDegrees(robotPose.getHeading()));
 
         double xPower = strafeController.calculate(-error.getX(), 0);
         double yPower = straightController.calculate(-error.getY(), 0);
         double hPower = hController.calculate(headingError, 0);
+
+        prevHPower = Range.clip(hPower, -1.0, 1.0);
 
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "X Position Error",

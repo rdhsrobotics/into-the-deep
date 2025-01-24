@@ -174,7 +174,10 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
                 .thenAcceptAsync {
                     extension.extendToAndStayAt(IntakeConfig.MAX_EXTENSION)
                         .thenAccept {
-                            extension.slides.idle()
+                            if (robot !is HypnoticAuto.HypnoticAutoRobot)
+                            {
+                                extension.slides.idle()
+                            }
                         }
 
                     outtake.readyCoaxial()
