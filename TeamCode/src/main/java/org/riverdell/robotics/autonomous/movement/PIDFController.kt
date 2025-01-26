@@ -1,54 +1,74 @@
-package org.riverdell.robotics.autonomous.movement;
+package org.riverdell.robotics.autonomous.movement
 
-import java.util.LinkedList;
+import java.util.LinkedList
+import kotlin.math.abs
+import kotlin.math.min
 
 /**
  * This is a PID controller (https://en.wikipedia.org/wiki/PID_controller)
  * for your robot. Internally, it performs all the calculations for you.
  * You need to tune your values to the appropriate amounts in order
  * to properly utilize these calculations.
- * <p>
+ *
+ *
  * The equation we will use is:
  * u(t) = kP * e(t) + kI * int(0,t)[e(t')dt'] + kD * e'(t) + kF
  * where e(t) = r(t) - y(t) and r(t) is the setpoint and y(t) is the
  * measured value. If we consider e(t) the positional error, then
  * int(0,t)[e(t')dt'] is the total error and e'(t) is the velocity error.
  */
-public class PIDFController {
+class PIDFController @JvmOverloads constructor(
+    var p: Double,
+    var i: Double,
+    var d: Double,
+    var f: (Double, Double) -> Double,
+    sp: Double = 0.0,
+    pv: Double = 0.0,
+    useAverageVelocity: Boolean = true
+) {
+    private var setPoint: Double
+    private var measuredValue: Double
+    private var minIntegral: Double
+    private var maxIntegral: Double
 
-    private double kP, kI, kD, kF;
-    private double setPoint;
-    private double measuredValue;
-    private double minIntegral, maxIntegral;
+    /**
+     * @return the positional error e(t)
+     */
+    var positionError: Double
+        private set
 
-    private double errorVal_p;
-    private double errorVal_v;
+    /**
+     * @return the velocity error e'(t)
+     */
+    var velocityError: Double = 0.0
+        private set
 
-    private double totalError;
-    private double prevErrorVal;
-    private boolean useAverageVelocity;
+    private var totalError = 0.0
+    private var prevErrorVal = 0.0
+    private val useAverageVelocity: Boolean
 
-    private double errorTolerance_p = 0.05;
-    private double errorTolerance_v = Double.POSITIVE_INFINITY;
+    private var errorToleranceP = 0.05
+    private var errorToleranceV = 0.1
 
-    private double lastTimeStamp;
-    private double period;
-    public double averageVelocity;
-    private final LinkedList<double[]> prevVels;
+    var lastTimeStamp: Double
+        private set
+    var period: Double
+        private set
+    var averageVelocity: Double
+    private val prevVels: LinkedList<DoubleArray>
 
     /**
      * The base constructor for the PIDF controller
      */
-
-    public PIDFController(double kp, double ki, double kd, double kf, boolean useAverageVelocity) {
-        this(kp, ki, kd, kf, 0, 0, useAverageVelocity);
-    }
-
-    public PIDFController(double kp, double ki, double kd, double kf) {
-        this(kp, ki, kd, kf, 0, 0, true);
-    }
-
-
+    constructor(kp: Double, ki: Double, kd: Double, kf: (Double, Double) -> Double, useAverageVelocity: Boolean) : this(
+        kp,
+        ki,
+        kd,
+        kf,
+        0.0,
+        0.0,
+        useAverageVelocity
+    )
 
     /**
      * This is the full constructor for the PIDF controller. Our PIDF controller
@@ -57,54 +77,50 @@ public class PIDFController {
      *
      * @param sp The setpoint of the pid control loop.
      * @param pv The measured value of he pid control loop. We want sp = pv, or to the degree
-     *           such that sp - pv, or e(t) < tolerance.
+     * such that sp - pv, or e(t) < tolerance.
      */
-    public PIDFController(double kp, double ki, double kd, double kf, double sp, double pv, boolean useAverageVelocity) {
-        kP = kp;
-        kI = ki;
-        kD = kd;
-        kF = kf;
+    init {
+        setPoint = sp
+        measuredValue = pv
 
-        setPoint = sp;
-        measuredValue = pv;
+        minIntegral = -1.0
+        maxIntegral = 1.0
 
-        minIntegral = -1.0;
-        maxIntegral = 1.0;
+        lastTimeStamp = 0.0
+        period = 0.0
+        prevVels = LinkedList()
+        averageVelocity = 0.0
+        this.useAverageVelocity = useAverageVelocity
 
-        lastTimeStamp = 0;
-        period = 0;
-        prevVels = new LinkedList<>();
-        averageVelocity = 0;
-        this.useAverageVelocity = useAverageVelocity;
-
-        errorVal_p = setPoint - measuredValue;
-        reset();
+        positionError = setPoint - measuredValue
+        reset()
     }
 
-    public void reset() {
-        totalError = 0;
-        prevErrorVal = 0;
-        lastTimeStamp = 0;
+
+    fun reset() {
+        totalError = 0.0
+        prevErrorVal = 0.0
+        lastTimeStamp = 0.0
     }
 
     /**
-     * Sets the error which is considered tolerable for use with {@link #atSetPoint()}.
+     * Sets the error which is considered tolerable for use with [.atSetPoint].
      *
      * @param positionTolerance Position error which is tolerable.
      */
-    public void setTolerance(double positionTolerance) {
-        setTolerance(positionTolerance, Double.POSITIVE_INFINITY);
+    fun setTolerance(positionTolerance: Double) {
+        setTolerance(positionTolerance, Double.POSITIVE_INFINITY)
     }
 
     /**
-     * Sets the error which is considered tolerable for use with {@link #atSetPoint()}.
+     * Sets the error which is considered tolerable for use with [.atSetPoint].
      *
      * @param positionTolerance Position error which is tolerable.
      * @param velocityTolerance Velocity error which is tolerable.
      */
-    public void setTolerance(double positionTolerance, double velocityTolerance) {
-        errorTolerance_p = positionTolerance;
-        errorTolerance_v = velocityTolerance;
+    fun setTolerance(positionTolerance: Double, velocityTolerance: Double) {
+        errorToleranceP = positionTolerance
+        errorToleranceV = velocityTolerance
     }
 
     /**
@@ -112,8 +128,8 @@ public class PIDFController {
      *
      * @return The current setpoint.
      */
-    public double getSetPoint() {
-        return setPoint;
+    fun getSetPoint(): Double {
+        return setPoint
     }
 
     /**
@@ -121,192 +137,117 @@ public class PIDFController {
      *
      * @param sp The desired setpoint.
      */
-    public void setSetPoint(double sp) {
+    fun setSetPoint(sp: Double) {
         if (sp != setPoint) {
-            setPoint = sp;
-            errorVal_p = setPoint - measuredValue;
+            setPoint = sp
+            positionError = setPoint - measuredValue
             //errorVal_v = (errorVal_p - prevErrorVal) / period;
         }
     }
 
     /**
      * Returns true if the error is within the percentage of the total input range, determined by
-     * {@link #setTolerance}.
+     * [.setTolerance].
      *
      * @return Whether the error is within the acceptable bounds.
      */
-    public boolean atSetPoint() {
-        return Math.abs(errorVal_p) < errorTolerance_p
-                && Math.abs(errorVal_v) < errorTolerance_v;
+    fun atSetPoint(): Boolean {
+        return (abs(positionError) < errorToleranceP
+                && abs(velocityError) < errorToleranceV)
     }
 
-    /**
-     * @return the PIDF coefficients
-     */
-    public double[] getCoefficients() {
-        return new double[]{kP, kI, kD, kF};
-    }
+    val coefficients: Pair<DoubleArray, (Double, Double) -> Double>
+        /**
+         * @return the PIDF coefficients
+         */
+        get() = Pair(doubleArrayOf(p, i, d), f)
 
-    /**
-     * @return the positional error e(t)
-     */
-    public double getPositionError() {
-        return errorVal_p;
-    }
-
-    /**
-     * @return the tolerances of the controller
-     */
-    public double[] getTolerance() {
-        return new double[]{errorTolerance_p, errorTolerance_v};
-    }
-
-    /**
-     * @return the velocity error e'(t)
-     */
-    public double getVelocityError() {
-        return errorVal_v;
-    }
-
-    /**
-     * Calculates the next output of the PIDF controller.
-     *
-     * @return the next output using the current measured value via
-     * {@link #calculate(double)}.
-     */
-    public double calculate() {
-        return calculate(measuredValue);
-    }
-
-    /**
-     * Calculates the next output of the PIDF controller.
-     *
-     * @param pv The given measured value.
-     * @param sp The given setpoint.
-     * @return the next output using the given measurd value via
-     * {@link #calculate(double)}.
-     */
-    public double calculate(double pv, double sp) {
-        // set the setpoint to the provided value
-        setSetPoint(sp);
-        return calculate(pv);
-    }
+    val tolerance: DoubleArray
+        /**
+         * @return the tolerances of the controller
+         */
+        get() = doubleArrayOf(errorToleranceP, errorToleranceV)
 
     /**
      * Calculates the control value, u(t).
      *
      * @param pv The current measurement of the process variable.
+     * @param sp The target the controller should drive pv to.
+     * @param velocity Measured velocity
      * @return the value produced by u(t).
      */
-    public double calculate(double pv) {
-        prevErrorVal = errorVal_p;
+    /**
+     * Calculates the next output of the PIDF controller.
+     *
+     * @return the next output using the current measured value via
+     * [.calculate].
+     */
 
-        double currentTimeStamp = (double) System.nanoTime() / 1E9;
-        if (lastTimeStamp == 0) lastTimeStamp = currentTimeStamp;
-        period = currentTimeStamp - lastTimeStamp;
-        lastTimeStamp = currentTimeStamp;
+    @JvmOverloads
+    fun calculate(pv: Double = measuredValue, sp: Double = setPoint, velocity: Double? = null): Double {
+        if (setPoint != sp) setSetPoint(sp)
 
-        if (measuredValue == pv) {
-            errorVal_p = setPoint - measuredValue;
-        } else {
-            errorVal_p = setPoint - pv;
-            measuredValue = pv;
-        }
+        prevErrorVal = positionError
 
-        if (Math.abs(period) > 1E-8) {
+        val currentTimeStamp = System.nanoTime().toDouble() / 1E9
+        if (lastTimeStamp == 0.0) lastTimeStamp = currentTimeStamp
+        period = currentTimeStamp - lastTimeStamp
+        lastTimeStamp = currentTimeStamp
+
+        measuredValue = pv
+        positionError = setPoint - measuredValue
+
+        if (abs(period) > 1E-8) {
             //stores up to 6 previous values of velocity and its period
-            prevVels.add(new double[]{(errorVal_p - prevErrorVal) / period, period});
-            if (prevVels.size() > 5) {
-                prevVels.pop();
+            prevVels.add(doubleArrayOf(velocity ?: ((positionError - prevErrorVal) / period), period))
+            if (prevVels.size > 5) {
+                prevVels.pop()
             }
             //quadratic recency biased average: 100 ms outdated is valued 4 times less than current
-            double sum = 0;
-            double periodSum = 0.0;
-            double denominator = 0.0;
-            double recencyWeight;
-            for (int i = 0; i < prevVels.size(); i++) {
-                recencyWeight = 1/(0.0003*periodSum*periodSum + 1);
-                sum += prevVels.get(i)[0]*recencyWeight;
-                denominator += recencyWeight;
-                periodSum += prevVels.get(i)[1];
+            var sum = 0.0
+            var periodSum = 0.0
+            var denominator = 0.0
+            var recencyWeight: Double
+            for (i in prevVels.indices) {
+                recencyWeight = 1 / (0.0003 * periodSum * periodSum + 1)
+                sum += prevVels[i][0] * recencyWeight
+                denominator += recencyWeight
+                periodSum += prevVels[i][1]
             }
-            averageVelocity = sum/denominator;
+            averageVelocity = sum / denominator
 
             if (useAverageVelocity) {
-                errorVal_v = averageVelocity;
+                velocityError = averageVelocity
             } else {
-                if (errorVal_p - prevErrorVal != 0) {
-                    errorVal_v = (errorVal_p - prevErrorVal) / period;
+                if (positionError - prevErrorVal != 0.0) {
+                    velocityError = (positionError - prevErrorVal) / period
                 }
             }
-        }/* else {
-            errorVal_v = 0;
-        }*/
+        }
 
-        /*
-        if total error is the integral from 0 to t of e(t')dt', and
+        /* if total error is the integral from 0 to t of e(t')dt', and
         e(t) = sp - pv, then the total error, E(t), equals sp*t - pv*t.
          */
-        totalError += period * (setPoint - measuredValue);
-        totalError = totalError < minIntegral ? minIntegral : Math.min(maxIntegral, totalError);
+        totalError += period * (setPoint - measuredValue)
+        totalError = totalError.coerceIn(minIntegral, maxIntegral)
 
         // returns u(t)
-        return kP * errorVal_p + kI * totalError + kD * errorVal_v;
+        return p * positionError + i * totalError + d * velocityError + f(0.0, 0.0) //TODO placeholder F
     }
 
-    public void setPIDF(double kp, double ki, double kd, double kf) {
-        kP = kp;
-        kI = ki;
-        kD = kd;
-        kF = kf;
+    fun setPIDF(kp: Double, ki: Double, kd: Double, kf: (Double, Double) -> Double) {
+        p = kp
+        i = ki
+        d = kd
+        f = kf
     }
 
-    public void setIntegrationBounds(double integralMin, double integralMax) {
-        minIntegral = integralMin;
-        maxIntegral = integralMax;
+    fun setIntegrationBounds(integralMin: Double, integralMax: Double) {
+        minIntegral = integralMin
+        maxIntegral = integralMax
     }
 
-    public void clearTotalError() {
-        totalError = 0;
-    }
-
-    public void setP(double kp) {
-        kP = kp;
-    }
-    
-    public void setI(double ki) {
-        kI = ki;
-    }
-
-    public void setD(double kd) {
-        kD = kd;
-    }
-
-    public void setF(double kf) {
-        kF = kf;
-    }
-
-    public double getP() {
-        return kP;
-    }
-
-    public double getI() {
-        return kI;
-    }
-
-    public double getD() {
-        return kD;
-    }
-
-    public double getF() {
-        return kF;
-    }
-
-    public double getPeriod() {
-        return period;
-    }
-
-    public double getLastTimeStamp() {
-        return  lastTimeStamp;
+    fun clearTotalError() {
+        totalError = 0.0
     }
 }

@@ -6,6 +6,7 @@ import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 import org.riverdell.robotics.HypnoticOpMode
 import org.riverdell.robotics.HypnoticRobot
+import org.riverdell.robotics.autonomous.detection.VisionPipeline
 import org.riverdell.robotics.autonomous.movement.konfig.NavigationConfig
 import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
 import kotlin.concurrent.thread
@@ -23,7 +24,7 @@ abstract class HypnoticAuto(
    inner class HypnoticAutoRobot : HypnoticRobot(this@HypnoticAuto)
    {
        val navigationConfig = NavigationConfig()
-//       val visionPipeline by lazy { VisionPipeline(this@HypnoticAuto) } // TODO: new season
+       val visionPipeline by lazy { VisionPipeline(this@HypnoticAuto) } // TODO: new season
 
        override fun additionalSubSystems() = listOf<AbstractSubsystem>(/*visionPipeline*/)
        override fun initialize()
@@ -39,8 +40,8 @@ abstract class HypnoticAuto(
 
                multipleTelemetry.addLine("--- Initialization ---")
 
-               multipleTelemetry.addLine("Alternative IMU: ${drivetrain.alternativeImu().getYaw(AngleUnit.DEGREES)}")
-               multipleTelemetry.addLine("Normal IMU: ${drivetrain.imu().getYaw(AngleUnit.DEGREES)}")
+               multipleTelemetry.addLine("IMU: ${drivetrain.imu().getYaw(AngleUnit.DEGREES)}")
+               //multipleTelemetry.addLine("Normal IMU: ${drivetrain.imu().getYaw(AngleUnit.DEGREES)}")
 
                multipleTelemetry.addData(
                    "Voltage",

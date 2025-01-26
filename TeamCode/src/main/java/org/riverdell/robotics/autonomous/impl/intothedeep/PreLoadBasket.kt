@@ -25,13 +25,9 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
 
     val parkSubmersible = listOf(
         FieldWaypoint(depositHighBucket, 25.0),
-        FieldWaypoint(Pose(70.29, 15.78, (70.0).degrees), 25.0),
-        FieldWaypoint(
-            Pose(70.0, -38.0, (180.0).degrees), 25.0
-        ),
-        FieldWaypoint(
-            Pose(70.0, -35.0, (180.0).degrees), 10.0
-        ),
+        FieldWaypoint(Pose(70.0, 13.0, (70.0).degrees), 25.0),
+        FieldWaypoint(Pose(70.0, -38.0, (180.0).degrees), 25.0),
+        FieldWaypoint(Pose(70.0, -35.0, (180.0).degrees), 10.0)
     )
 
     opMode.robot.drivetrain.localizer.poseEstimate = startPose
