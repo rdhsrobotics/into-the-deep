@@ -174,7 +174,10 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
                 .thenAcceptAsync {
                     extension.extendToAndStayAt(IntakeConfig.MAX_EXTENSION)
                         .thenAccept {
-                            extension.slides.idle()
+                            if (robot !is HypnoticAuto.HypnoticAutoRobot)
+                            {
+                                extension.slides.idle()
+                            }
                         }
 
                     outtake.readyCoaxial()
@@ -227,12 +230,12 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             outtake.transferCoaxial()
         ).join()
 
-        Thread.sleep(350)
+        Thread.sleep(100)
         CompletableFuture.allOf(
             intake.openIntake(),
             outtake.closeClaw()
         )
-        Thread.sleep(150)
+        Thread.sleep(50)
 
         CompletableFuture.allOf(
             outtake.depositRotation()

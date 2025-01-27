@@ -1,5 +1,6 @@
 package org.riverdell.robotics
 
+import com.qualcomm.hardware.lynx.LynxModule
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode
 import com.qualcomm.robotcore.hardware.DcMotor
@@ -48,7 +49,12 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
 //    lateinit var hangRight: CRServoImplEx
 
     fun initializeHardware() {
-        imu = opMode.hardwareMap["imu"] as IMU
+        val allHubs = opMode.hardwareMap.getAll(LynxModule::class.java)
+        for (hub in allHubs) {
+            hub.bulkCachingMode = LynxModule.BulkCachingMode.AUTO
+        }
+
+        imu = opMode.hardwareMap["imu"] as IMU //TODO Figure out which IMU is "lol" and "imu"
         imu.initialize(
             IMU.Parameters(
                 RevHubOrientationOnRobot(

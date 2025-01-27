@@ -44,12 +44,12 @@ public class TwoWheelLocalizer extends TwoTrackingWheelLocalizer {
     private final HypnoticRobot hypnoticRobot;
 
     private final Supplier<Integer> lateral;
-    private final  Supplier<Integer> perpendicular;
+    private final Supplier<Integer> perpendicular;
 
     public TwoWheelLocalizer(HypnoticRobot hypnoticRobot) {
         super(Arrays.asList(
-                new Pose2d(0, 0, 0), // left + right
-                new Pose2d(0, 0, Math.toRadians(90)) // front
+                new Pose2d(-4, 0, 0), // left + right TODO TUNE X VALUE
+                new Pose2d(4, 0, Math.toRadians(90)) // front TODO TUNE X VALUE
         ));
 
         this.hypnoticRobot = hypnoticRobot;
@@ -74,7 +74,7 @@ public class TwoWheelLocalizer extends TwoTrackingWheelLocalizer {
 
     @Override
     public double getHeading() {
-        return hypnoticRobot.getDrivetrain().alternativeImu().getYaw(AngleUnit.RADIANS);
+        return hypnoticRobot.getDrivetrain().imu().getYaw(AngleUnit.RADIANS);
     }
 
     @NonNull
