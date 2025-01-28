@@ -12,7 +12,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     var state = InteractionCompositeState.Initial
     var attemptedState: InteractionCompositeState? = null
     var attemptTime = System.currentTimeMillis()
-    var outtakeLevel = OuttakeLevel.Rest
+    var outtakeLevel = OuttakeLevel.rest
     var lastOuttakeBegin = System.currentTimeMillis()
 
     fun outtakeNext(): CompletableFuture<*> {
@@ -129,7 +129,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         robot.outtake.setClawState(ClawState.Open)
             .thenComposeAsync {
                 robot.outtake.setPivotState(PivotState.PostScore).join()
-                outtakeLevel(OuttakeLevel.Rest)
+                outtakeLevel(OuttakeLevel.rest)
             }
             .thenRun {
                 robot.outtake.setClawState(ClawState.Closed)

@@ -21,7 +21,7 @@ class Sushil(private val robot: HypnoticRobot) : AbstractSubsystem() {
     var wristState = WristState.Lateral
     var pivotState = PivotState.Initialize
 
-    fun setClawState(state: ClawState) = let {
+    fun setClawState(state: ClawState): CompletableFuture<*> = let {
         if (clawState == state)
             return@let CompletableFuture.completedFuture(null)
 
