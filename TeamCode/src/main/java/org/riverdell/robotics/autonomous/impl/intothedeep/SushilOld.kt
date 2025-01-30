@@ -11,14 +11,15 @@ import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 
 @Autonomous(name = "Specimen + Park")
 class SushilOld : HypnoticAuto({ robot ->
-    single("hors") {
-
+    single("Specimen + Park") {
+        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
+        (OuttakeLevel.lowBar2)
+        navigateTo(Pose(0.0, -31.4, 0.degrees))
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.bar2)
         (OuttakeLevel.bar2)
-        navigateTo(Pose(0.0, -28.4, 0.degrees))
-
+        navigateTo(Pose(-21.74, -19.19, 0.degrees))//changeeeee
         robot.robot.outtake.setClawState(ClawState.Open)
-
+        robot.robot.outtake.setClawState(ClawState.Closed)
         navigateTo(Pose(-36.6, -28.8, 0.degrees))
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.rest)
         navigateTo(Pose(-38.0, -49.0, 0.degrees))
@@ -28,7 +29,7 @@ class SushilOld : HypnoticAuto({ robot ->
         navigateTo(Pose(-54.37, -51.0, 0.degrees))
         navigateTo(Pose(-55.8, -17.5, 0.degrees))
         navigateTo(Pose(-56.9, -56.2, 0.degrees))
-        navigateTo(Pose(-64.3, -66.1, 0.degrees))//change
+        navigateTo(Pose(-64.3, -66.1, 0.degrees))
         navigateTo(Pose(-63.3, -22.4, 0.degrees))
     }
 })
