@@ -6,13 +6,11 @@ import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.autonomous.movement.degrees
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
 import org.riverdell.robotics.autonomous.movement.purePursuitNavigateTo
-import org.riverdell.robotics.subsystems.outtake.ClawState
-import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 import org.riverdell.robotics.autonomous.movement.purepursuit.FieldWaypoint
 
-@Autonomous(name = "hors")
+@Autonomous(name = "PurePursuit")
 class Sushil : HypnoticAuto({ robot ->
-    single("hors") {
+    single("PurePursuit") {
 
         purePursuitNavigateTo(
             FieldWaypoint(Pose(0.0, -28.4, 0.degrees), 10.0),

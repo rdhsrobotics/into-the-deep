@@ -8,9 +8,10 @@ import org.riverdell.robotics.autonomous.movement.geometry.Pose
 import org.riverdell.robotics.autonomous.movement.navigateTo
 import org.riverdell.robotics.subsystems.outtake.ClawState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
+import org.riverdell.robotics.subsystems.outtake.PivotState
 
 @Autonomous(name = "Specimen + Park")
-class SushilOld : HypnoticAuto({ robot ->
+class OneSpec : HypnoticAuto({ robot ->
     single("Specimen + Park") {
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
         (OuttakeLevel.lowBar2)
@@ -33,7 +34,7 @@ class SushilOld : HypnoticAuto({ robot ->
 
         navigateTo(Pose(-44.0, -51.65, 0.degrees))
 
-        navigateTo(Pose(-54.37, -51.0, 0.degrees))
+        navigateTo(Pose(-54.37, -54.0, 0.degrees))
 
         navigateTo(Pose(-55.8, -17.5, 0.degrees))
 
@@ -41,6 +42,28 @@ class SushilOld : HypnoticAuto({ robot ->
 
         navigateTo(Pose(-64.3, -66.1, 0.degrees)) //Diagonal Right
 
-        navigateTo(Pose(-63.3, -22.4, 0.degrees)) //All the way back and park
+        navigateTo(Pose(-63.3, -25.4, 0.degrees)) //All the way back and park
+
+        navigateTo(Pose(-63.3, -45.4, 0.degrees))
+
+        navigateTo(Pose(-23.3, -17.0, 0.degrees))
+
+
+
+        robot.robot.outtake.setClawState(ClawState.Open)
+        robot.robot.outtake.setPivotState(PivotState.Hover)
+
+        navigateTo(Pose(-33.3, -10.33, 270.degrees))
+        robot.robot.outtake.setClawState(ClawState.Closed)
+
+        robot.robot.outtake.setPivotState(PivotState.PostScore)
+        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
+        (OuttakeLevel.lowBar2)
+        navigateTo(Pose(0.0, -38.4, 0.degrees))
+        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.bar2)
+        (OuttakeLevel.bar2)
+
+
+
     }
 })
