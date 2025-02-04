@@ -134,11 +134,11 @@ public class BadWolfOpMode extends LinearOpMode {
             }
 
             if (gamepad1.right_trigger > 0.2) { //scoring
-                pivotRight.setPosition(0.55);
-                pivotLeft.setPosition(0.45);
+                pivotRight.setPosition(0.6);
+                pivotLeft.setPosition(0.4);
             } else if (gamepad2.right_trigger > 0.2) { //scoring
-                pivotRight.setPosition(0.14);
-                pivotLeft.setPosition(0.86);
+                pivotRight.setPosition(0.20);
+                pivotLeft.setPosition(0.80);
             }
 
 
