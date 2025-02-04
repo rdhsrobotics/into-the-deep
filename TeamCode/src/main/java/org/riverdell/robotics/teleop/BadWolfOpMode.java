@@ -58,8 +58,8 @@ public class BadWolfOpMode extends LinearOpMode {
         backRight.setDirection(DcMotor.Direction.FORWARD);
 
         // Set initial servo positions
-        pivotRight.setPosition(0.7); // Initial position for right elevator servo
-        pivotLeft.setPosition(0.3);  // Initial position for left elevator servo
+        pivotRight.setPosition(0.85); // Initial position for right elevator servo
+        pivotLeft.setPosition(0.15);  // Initial position for left elevator servo
         claw.setPosition(0);      // Initial position for master claw
         wrist.setPosition(0.47);       // Initial position for claw rotation
 
@@ -72,8 +72,8 @@ public class BadWolfOpMode extends LinearOpMode {
         runtime.reset();
 
         // Set servo positions after game starts
-        pivotRight.setPosition(0.5);
-        pivotLeft.setPosition(0.5);
+        pivotRight.setPosition(0.63);
+        pivotLeft.setPosition(0.37);
         wrist.setPosition(0.47);//for vertical samples and rest state
 
         while (opModeIsActive()) {
@@ -134,11 +134,11 @@ public class BadWolfOpMode extends LinearOpMode {
             }
 
             if (gamepad1.right_trigger > 0.2) { //scoring
-                pivotRight.setPosition(0.6);
-                pivotLeft.setPosition(0.4);
+                pivotRight.setPosition(0.7);
+                pivotLeft.setPosition(0.3);
             } else if (gamepad2.right_trigger > 0.2) { //scoring
-                pivotRight.setPosition(0.20);
-                pivotLeft.setPosition(0.80);
+                pivotRight.setPosition(0.3);
+                pivotLeft.setPosition(0.7);
             }
 
 
@@ -163,22 +163,22 @@ public class BadWolfOpMode extends LinearOpMode {
 
             if (gamepad1.b || gamepad2.b) {
                 // reset everything and go to default position
-                pivotRight.setPosition(0.5);
-                pivotLeft.setPosition(0.5);
+                pivotRight.setPosition(0.63);
+                pivotLeft.setPosition(0.37);
                 wrist.setPosition(0.47);
                 claw.setPosition(0.0);
             }
 
             if (gamepad1.y || gamepad2.y) {
                 // Move servos to specific positions. This is the hover point
-                pivotRight.setPosition(0.27);//real low to hover. Make higher to hover higher and make lower to hover lower
-                pivotLeft.setPosition(0.73);//these two numbers should always add up to hundred. otherwise u are breaking the servos
+                pivotRight.setPosition(0.33);//real low to hover. Make higher to hover higher and make lower to hover lower
+                pivotLeft.setPosition(0.67);//these two numbers should always add up to hundred. otherwise u are breaking the servos
             }
 
             if (gamepad1.x || gamepad2.x) {
                 // Check if servos are in the correct positions for to perform a grab
                 //so if y is pressed and then x is pressed it performs a grab.
-                if (pivotRight.getPosition() == 0.27 && pivotLeft.getPosition() == 0.73) {
+                if (pivotRight.getPosition() == 0.33 && pivotLeft.getPosition() == 0.67) {
                     performGrab();
                 }
             }
@@ -198,7 +198,7 @@ public class BadWolfOpMode extends LinearOpMode {
         ElapsedTime timer = new ElapsedTime();
 
         // Open claw to position 0.45
-        claw.setPosition(0.5);
+        claw.setPosition(0.42);
         timer.reset();
         while (timer.seconds() < 0.05 && opModeIsActive()) {
             // Wait for 0.1 seconds
@@ -207,8 +207,8 @@ public class BadWolfOpMode extends LinearOpMode {
         }
 
         // Move servos to new positions
-        pivotRight.setPosition(0.16);
-        pivotLeft.setPosition(0.84);
+        pivotRight.setPosition(0.25);
+        pivotLeft.setPosition(0.75);
         timer.reset();
         while (timer.seconds() < 0.05 && opModeIsActive()) {
             // Wait for 0.5 second
@@ -233,8 +233,8 @@ public class BadWolfOpMode extends LinearOpMode {
         }
 
         // Set right and left servo positions to 0.5
-        pivotRight.setPosition(0.27);
-        pivotLeft.setPosition(0.73);
+        pivotRight.setPosition(0.37);
+        pivotLeft.setPosition(0.63);
         claw.setPosition(0);
     }
 }
