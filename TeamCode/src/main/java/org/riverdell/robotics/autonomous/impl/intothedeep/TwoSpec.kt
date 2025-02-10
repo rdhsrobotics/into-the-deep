@@ -10,13 +10,13 @@ import org.riverdell.robotics.subsystems.outtake.ClawState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 import org.riverdell.robotics.subsystems.outtake.PivotState
 
-@Autonomous(name = "2+0")
+@Autonomous(name = "2+0 do now")
 class TwoSpec : HypnoticAuto({ robot ->
     single("2+0") {
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
         (OuttakeLevel.lowBar2)
 
-        navigateTo(Pose(0.0, -31.4, 0.degrees)) //Specimen Scoring Line Up
+        navigateTo(Pose(0.0, -28.4, 0.degrees)) //Specimen Scoring Line Up
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.bar2)
         (OuttakeLevel.bar2)
 
@@ -59,7 +59,7 @@ class TwoSpec : HypnoticAuto({ robot ->
         robot.robot.outtake.setPivotState(PivotState.PostScore)
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
         (OuttakeLevel.lowBar2)
-        navigateTo(Pose(0.0, -38.4, 0.degrees))
+        navigateTo(Pose(0.0, -36.4, 0.degrees))
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.bar2)
         (OuttakeLevel.bar2)
 
