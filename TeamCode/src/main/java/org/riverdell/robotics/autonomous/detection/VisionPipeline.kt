@@ -23,6 +23,9 @@ class VisionPipeline(
 
     }
 
+    override fun periodic() {
+    }
+
     override fun doInitialize()
     {
         sampleDetection = SampleDetection()
@@ -31,23 +34,29 @@ class VisionPipeline(
                 opMode.hardwareMap["webcam"] as WebcamName
             )
             .setCameraResolution(Size(1280, 960))
-            .enableLiveView(true)
+            .enableLiveView(false)
             .setAutoStopLiveView(true)
             .addProcessors(sampleDetection)
             .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
             .build()
 
-        portal.stopStreaming()
-        portal.resumeStreaming()
-
         FtcDashboard.getInstance().startCameraStream(
             sampleDetection,
             30.0
         )
+
+        pause()
+    }
+
+    fun pause()
+    {
+        portal.setProcessorEnabled(sampleDetection, false)
+        portal.stopStreaming()
+        portal.stopLiveView()
     }
 
     override fun dispose()
     {
-//        portal.close()
+        portal.close()
     }
 }

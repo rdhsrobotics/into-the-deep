@@ -7,13 +7,25 @@ import org.riverdell.robotics.utilities.managed.ServoBehavior
 import org.riverdell.robotics.utilities.motionprofile.Constraint
 import java.util.concurrent.CompletableFuture
 
-class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem()
-{
-    private val claw = motionProfiledServo("outtake_c", robot.hardware.outtakeClaw, Constraint.HALF.scale(10.5))
+class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem() {
+    private val claw =
+        motionProfiledServo("outtake_c", robot.hardware.outtakeClaw, Constraint.HALF.scale(10.5))
 
-    private val coaxial = motionProfiledServo("outtake_cr", robot.hardware.outtakeCoaxial, Constraint.HALF.scale(50.5))
-    private val leftRotation = motionProfiledServo("outtake_lr", robot.hardware.outtakeRotationLeft, Constraint.HALF.scale(50.5))
-    private val rightRotation = motionProfiledServo("outtake_rr", robot.hardware.outtakeRotationRight, Constraint.HALF.scale(50.5))
+    private val coaxial = motionProfiledServo(
+        "outtake_cr",
+        robot.hardware.outtakeCoaxial,
+        Constraint.HALF.scale(50.5)
+    )
+    private val leftRotation = motionProfiledServo(
+        "outtake_lr",
+        robot.hardware.outtakeRotationLeft,
+        Constraint.HALF.scale(50.5)
+    )
+    private val rightRotation = motionProfiledServo(
+        "outtake_rr",
+        robot.hardware.outtakeRotationRight,
+        Constraint.HALF.scale(50.5)
+    )
 
     var clawState = OuttakeClawState.Closed
     var coaxialState = OuttakeCoaxialState.Ready
@@ -21,6 +33,7 @@ class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem()
 
     fun readyRotation() = setRotation(OuttakeRotationState.Ready)
     fun transferRotation() = setRotation(OuttakeRotationState.Transfer)
+    fun transferRotationForce() = setRotationForce(OuttakeRotationState.Transfer)
     fun forceRotation() = setRotation(OuttakeRotationState.Force)
     fun specimenRotation() = setRotation(OuttakeRotationState.Specimen)
     fun depositRotation() = setRotation(OuttakeRotationState.Deposit)
@@ -33,9 +46,20 @@ class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem()
         return@let updateRotationState()
     }
 
-    private fun updateRotationState(): CompletableFuture<*>
-    {
+    fun setRotationForce(state: OuttakeRotationState) = let {
+        if (rotationState == state)
+            return@let CompletableFuture.completedFuture(null)
+
+        rotationState = state
+        return@let updateRotationStateForce()
+    }
+
+    private fun updateRotationState(): CompletableFuture<*> {
         return rotationRotateTo(rotationState.position)
+    }
+
+    private fun updateRotationStateForce(): CompletableFuture<*> {
+        return rotationRotateToForce(rotationState.position)
     }
 
     fun openClaw() = setClaw(OuttakeClawState.Open)
@@ -49,8 +73,7 @@ class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem()
         return@let updateClawState()
     }
 
-    private fun updateClawState(): CompletableFuture<*>
-    {
+    private fun updateClawState(): CompletableFuture<*> {
         CompletableFuture.runAsync {
             clawRotateTo(clawState.position)
         }
@@ -60,6 +83,7 @@ class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem()
 
     fun readyCoaxial() = setCoaxial(OuttakeCoaxialState.Ready)
     fun transferCoaxial() = setCoaxial(OuttakeCoaxialState.Transfer)
+    fun transferCoaxialForce() = setCoaxialForce(OuttakeCoaxialState.Transfer)
     fun depositCoaxial() = setCoaxial(OuttakeCoaxialState.Deposit)
     fun specimenCoaxial() = setCoaxial(OuttakeCoaxialState.Specimen)
     fun outsideIntakeCoaxial() = setCoaxial(OuttakeCoaxialState.OutsideIntake)
@@ -72,28 +96,51 @@ class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem()
         return@let updateCoaxialState()
     }
 
-    private fun updateCoaxialState(): CompletableFuture<*>
-    {
+    fun setCoaxialForce(state: OuttakeCoaxialState) = let {
+        if (coaxialState == state)
+            return@let CompletableFuture.completedFuture(null)
+
+        coaxialState = state
+        return@let updateCoaxialStateForce()
+    }
+
+    private fun updateCoaxialState(): CompletableFuture<*> {
         return coaxialRotateTo(coaxialState.position)
+    }
+
+    private fun updateCoaxialStateForce(): CompletableFuture<*> {
+        return coaxialRotateToForce(coaxialState.position)
     }
 
     private fun clawRotateTo(position: Double) {
         claw.unwrapServo().position = position
     }
 
-    private fun coaxialRotateTo(position: Double) = coaxial.setTarget(position, ServoBehavior.MotionProfile)
-    private fun rotationRotateTo(position: Double) = CompletableFuture.allOf(
-        leftRotation.setTarget(1.0 - position, ServoBehavior.MotionProfile),
-        rightRotation.setTarget(position, ServoBehavior.MotionProfile)
-    )
+    private fun coaxialRotateTo(position: Double) =
+        coaxial.setTarget(position, ServoBehavior.MotionProfile)
 
-    override fun start()
-    {
+    private fun rotationRotateTo(position: Double) = let {
+        CompletableFuture.allOf(
+            leftRotation.setTarget(1.0 - position, ServoBehavior.MotionProfile),
+            rightRotation.setTarget(position, ServoBehavior.MotionProfile)
+        )
+    }
+
+    private fun coaxialRotateToForce(position: Double) =
+        coaxial.setTarget(position, ServoBehavior.Direct)
+
+    private fun rotationRotateToForce(position: Double) = let {
+        CompletableFuture.allOf(
+            leftRotation.setTarget(1.0 - position, ServoBehavior.Direct),
+            rightRotation.setTarget(position, ServoBehavior.Direct)
+        )
+    }
+
+    override fun start() {
 
     }
 
-    override fun doInitialize()
-    {
+    override fun doInitialize() {
 
     }
 }

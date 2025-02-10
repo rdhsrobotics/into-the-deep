@@ -1,6 +1,8 @@
 package org.riverdell.robotics.autonomous.movement;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.robotcore.hardware.PIDCoefficients;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -9,7 +11,9 @@ import org.jetbrains.annotations.Nullable;
 import org.riverdell.robotics.autonomous.HypnoticAuto;
 import org.riverdell.robotics.autonomous.movement.geometry.Point;
 import org.riverdell.robotics.autonomous.movement.geometry.Pose;
+import org.riverdell.robotics.autonomous.movement.localization.TwoWheelLocalizer;
 
+import java.sql.SQLOutput;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -20,38 +24,38 @@ import kotlin.jvm.functions.Function1;
 
 @Config
 public class PositionChangeAction {
-    private static final DrivetrainUpdates ZERO = new DrivetrainUpdates(0.0, 0.0, 0.0, 0.0);
+    public static final DrivetrainUpdates ZERO = new DrivetrainUpdates(0.0, 0.0, 0.0, 0.0);
 
     private final HypnoticAuto instance;
     private final RootExecutionGroup executionGroup;
 
-    public static double strafeP = 0.12;
-    public static double strafeD = 0.012;
+    public static PIDCoefficients strafePID = new PIDCoefficients(0.125, 0.0, 0.0185);
+    public static PIDCoefficients straightPID = new PIDCoefficients(0.077, 0.0, 0.0155);
+    public static PIDCoefficients headingPID = new PIDCoefficients(1.02, 0.0, -0.125);
 
-    public static double straightP = 0.075;
-    public static double straightD = 0.01;
+    public static PIDCoefficients extendoOutHeadingPID = new PIDCoefficients(0.975, 0.0, -0.195);
 
-    public static double hP = 0.95; // 1.25 for extendo in
-    public static double hI = 0.0;
-    public static double hD = 0.19; // 0.16 for extendo in
-
-    public static double TURN_POWER_BOOST = 0.06;
-    public static double STRAFE_POWER_BOOST = 0.18;
+    public static double TURN_POWER_BOOST = -0.13;
+    public static double STRAFE_POWER_BOOST = 0.125;
     public static double STRAIGHT_POWER_BOOST = 0.03;
 
-    public static double TURN_PREDICTION_ACCELERATION = 0.00025;
-    public static double TURN_PREDICTION_VELOCITY = 6.0;
+    public static double TURN_PREDICTION_ACCELERATION = 0;
+    public static double TURN_PREDICTION_VELOCITY = 0;
     public static double TURN_MAX_VELOCITY = 5;
 
-    public double maxTranslationalError = 0.7;
-    public double maxHeadingError = 1.5;
+    public double maxTranslationalError = 0.8;
+    public double maxHeadingError = 1.6 * Math.PI / 180;
+    public double maxTranslationalVelocity = 2.5;
+    public double maxHeadingVelocity = 50;
+    private final double atTargetMillis = 30;
 
-    public static PIDFController strafeController;
-    public static PIDFController straightController;
-    public static PIDFController hController;
+    public PIDFController strafeController;
+    public PIDFController straightController;
+    public PIDFController hController;
 
     private final ElapsedTime activeTimer = new ElapsedTime();
     private final ElapsedTime stuckTime = new ElapsedTime();
+    private final ElapsedTime atTargetTimer = new ElapsedTime();
 
     private final LinkedList<double[]> prevHPowers = new LinkedList<>();
     private double prevHPower = 0.0;
@@ -61,38 +65,47 @@ public class PositionChangeAction {
     /**
      * Preferred to use stuck protection in this case...
      */
-    private @Nullable Double automaticDeathMillis = 2500.0;
+    private @Nullable Double automaticDeathMillis = 3500.0;
 
-    private double maxTranslationalSpeed = 1.0;
-    private double maxRotationalSpeed = 1.0;
+    private double maxTranslationalPower = 1.0;
+    private double maxRotationalPower = 1.0;
 
-    private double period = 0.0;
+    private double periodNanos = 0.0;
     private double prevTime = 0.0;
+    private @Nullable Pose previousPose = null;
+    private Pose velocity = new Pose();
+    private double translatePosAcquisitionTime = System.nanoTime();
+    private double headingAcquisitionTime = System.nanoTime();
+    private double currentTimeNanos = System.nanoTime();
 
     public PositionChangeAction(@Nullable Pose targetPose, @NotNull RootExecutionGroup executionGroup) {
         this.instance = HypnoticAuto.getInstance();
         this.targetPose = targetPose;
         this.executionGroup = executionGroup;
 
-        strafeController = new PIDFController(strafeP, 0.0, strafeD, (target, vel) -> 0.0);
-        straightController = new PIDFController(straightP, 0.0, straightD, (target, vel) -> 0.0);
-        hController = new PIDFController(hP, hI, hD, (target, vel) -> 0.0);
+        strafeController = new PIDFController(strafePID, (current, target, vel) -> 0.0);
+        straightController = new PIDFController(straightPID, (current, target, vel) -> 0.0);
+        hController = new PIDFController(headingPID, (current, target, vel) -> 0.0);
 
-        strafeController.setTolerance(maxTranslationalError, maxTranslationalSpeed);
+        strafeController.setTolerance(maxTranslationalError, maxTranslationalVelocity);
+        straightController.setTolerance(maxTranslationalError, maxTranslationalVelocity);
+        hController.setTolerance(maxHeadingError, maxHeadingVelocity);
     }
 
     private @Nullable PathAlgorithm pathAlgorithm = null;
     private @Nullable Function1<PositionChangeActionEndResult, Unit> endSubscription = null;
 
-    private @Nullable Pose previousPose = null;
-    private @Nullable Pose velocity = null;
-
     public void executeBlocking() {
-        while (true) {
-            if (prevTime == 0) { prevTime = System.nanoTime(); }
-            period = System.nanoTime() - prevTime;
-            prevTime = System.nanoTime();
+        executeBlocking(false);
+    }
 
+    public void executeBlocking(boolean test) {
+        while (true) {
+            currentTimeNanos = System.nanoTime();
+
+            if (prevTime == 0) { prevTime = System.nanoTime(); }
+            periodNanos = currentTimeNanos - prevTime;
+            prevTime = currentTimeNanos;
 
             if (instance.isStopRequested()) {
                 executionGroup.terminateMidExecution();
@@ -100,29 +113,50 @@ public class PositionChangeAction {
                 return;
             }
 
-            instance.getRobot().getImuProxy().allPeriodic();
-            instance.getRobot().getDrivetrain().getLocalizer().update();
-
             Pose robotPose = instance.getRobot().getDrivetrain().getLocalizer().getPose();
-            velocity = (previousPose != null) ? robotPose.subtract(previousPose).divide(new Pose(period, period, period)) : new Pose(0, 0, 0);
-            previousPose = robotPose;
+            if (previousPose == null) { previousPose = robotPose; }
+
+            if (Math.abs(translatePosAcquisitionTime - TwoWheelLocalizer.translateAcquisitionTime) > 10) {
+                double translatePosPeriod = Math.max( 1.0 / 1E3, (TwoWheelLocalizer.translateAcquisitionTime - translatePosAcquisitionTime) / 1E9);
+                double deltaX = robotPose.x - previousPose.x;
+                double deltaY = robotPose.y - previousPose.y;
+                velocity.x = deltaX / translatePosPeriod;
+                velocity.y = deltaY / translatePosPeriod;
+                previousPose.x = robotPose.x;
+                previousPose.y = robotPose.y;
+                translatePosAcquisitionTime = TwoWheelLocalizer.translateAcquisitionTime;
+            }
+
+            double newHeadingAcquisitionTime = instance.getRobot().getDrivetrain().imu().getAcquisitionTime();
+            if (Math.abs(headingAcquisitionTime - newHeadingAcquisitionTime) > 10) {
+                // I2C register only updates at 100 Hz max
+                double headingPeriod = Math.max(1.0 / 100, (newHeadingAcquisitionTime - headingAcquisitionTime) / 1E9);
+                double deltaHeading = robotPose.getHeading() - previousPose.getHeading();
+                if (deltaHeading > Math.PI) deltaHeading -= 2 * Math.PI;
+                if (deltaHeading < -Math.PI) deltaHeading += 2 * Math.PI;
+                velocity.setHeading(deltaHeading / headingPeriod);
+                previousPose.setHeading(robotPose.getHeading());
+                headingAcquisitionTime = newHeadingAcquisitionTime;
+            }
 
             Pose targetPose = this.pathAlgorithm == null ? this.targetPose :
                     pathAlgorithm.getTargetCompute().invoke(robotPose);
 
+            assert targetPose != null;
+            Pose powers = getPowers(robotPose, targetPose, velocity);
+            if (!test) {
+                HypnoticAuto.setNextUpdates(MecanumTranslations.getPowers(powers,
+                        straightController.getVelocityError(),
+                        strafeController.getVelocityError(),
+                        hController.getVelocityError()
+                ));
+            }
+
             PositionChangeActionEndResult result = getState(robotPose, targetPose, velocity);
-            if (result != null) {
+            if (result != null && !test) {
                 finish(result);
                 return;
             }
-
-            assert targetPose != null;
-            Pose powers = getPowers(robotPose, targetPose, velocity);
-            MecanumTranslations.getPowers(powers,
-                    straightController.getVelocityError(),
-                    strafeController.getVelocityError(),
-                    hController.getVelocityError()
-            ).propagate(instance);
         }
     }
 
@@ -132,72 +166,61 @@ public class PositionChangeAction {
     }
 
     public @NotNull Pose getPowers(@NotNull Pose robotPose, @NotNull Pose targetPose, Pose velocity) {
-        double currentTime = System.nanoTime();
-
-        double imuLatencyNanos = currentTime - instance.getRobot().getImuProxy().alternativeImu().getAcquisitionTime();
         double targetHeading = targetPose.getHeading();
-        double robotHeading = predictHeading(
-                period / 1E6,
-                imuLatencyNanos,
-                robotPose.getHeading(),
-                velocity.getHeading());
+        double imuLatencyNanos = currentTimeNanos - headingAcquisitionTime;
+        double robotHeading = robotPose.getHeading();
         double headingError = targetHeading - robotHeading;
 
         if (headingError > Math.PI) headingError -= 2 * Math.PI;
         if (headingError < -Math.PI) headingError += 2 * Math.PI;
 
-        Point robotCentricTranslationalError = targetPose.subtract(robotPose).rotate(robotHeading);
-        Point robotCentricTranslationalVelocity = velocity.rotate(robotHeading);
+        Point robotCentricTranslationalError = targetPose.subtract(robotPose).rotate(-robotHeading - Math.PI / 2);
+        Point robotCentricTranslationalVelocity = velocity.rotate(-robotHeading - Math.PI / 2);
 
         double xPower = strafeController.calculate(
-                -robotCentricTranslationalError.x,
-                0,
-                robotCentricTranslationalVelocity.x);
+                robotCentricTranslationalError.x, 0, robotCentricTranslationalVelocity.x);
         double yPower = straightController.calculate(
-                -robotCentricTranslationalError.y,
-                0,
-                robotCentricTranslationalVelocity.y
-        );
-        double hPower = hController.calculate(-headingError, 0);
+                robotCentricTranslationalError.y, 0, robotCentricTranslationalVelocity.y);
+        double hPower = hController.calculate(-headingError, 0, velocity.getHeading());
 
-        hPower = Range.clip(hPower, -maxRotationalSpeed, maxRotationalSpeed);
+        hPower = Range.clip(hPower, -maxRotationalPower, maxRotationalPower);
         prevHPower = hPower;
-        xPower = Range.clip(xPower, -maxRotationalSpeed, maxTranslationalSpeed);
-        yPower = Range.clip(yPower, -maxRotationalSpeed, maxTranslationalSpeed);
+        xPower = Range.clip(xPower, -maxTranslationalPower, maxTranslationalPower);
+        yPower = Range.clip(yPower, -maxTranslationalPower, maxTranslationalPower);
 
-        updateTelemetry(imuLatencyNanos);
+        updateTelemetry(imuLatencyNanos, robotHeading);
 
         return new Pose(xPower, yPower, hPower);
     }
 
-    public void updateTelemetry(double imuLatencyNanos) {
+    public void updateTelemetry(double imuLatencyNanos, double robotHeading) {
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "X Position Error",
-                PositionChangeAction.strafeController.getPositionError()
+                strafeController.getPositionError()
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "X Velocity Error",
-                PositionChangeAction.strafeController.getVelocityError()
+                strafeController.getVelocityError()
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "Y Position Error",
-                PositionChangeAction.straightController.getPositionError()
+                straightController.getPositionError()
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "Y Velocity Error",
-                PositionChangeAction.straightController.getVelocityError()
+                straightController.getVelocityError()
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
-                "Heading Error",
+                "Heading",
                 Math.toDegrees(hController.getPositionError())
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "Heading Velocity Error",
-                PositionChangeAction.hController.getVelocityError()
+                Math.toDegrees(hController.getVelocityError())
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "Period Milliseconds",
-                period / 1E6
+                periodNanos / 1E6
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "IMU Latency ms",
@@ -215,6 +238,9 @@ public class PositionChangeAction {
 
     private @Nullable PositionChangeActionEndResult getState(Pose currentPose, Pose targetPose, Pose velocity) {
         if (currentPose == null || targetPose == null) {
+            return PositionChangeActionEndResult.LocalizationFailure;
+        }
+        if (Double.isNaN(currentPose.getHeading()) || Double.isNaN(targetPose.getHeading())) {
             return PositionChangeActionEndResult.LocalizationFailure;
         }
 
@@ -247,7 +273,11 @@ public class PositionChangeAction {
             }
         }
 
-        if (strafeController.atSetPoint() && strafeController.atSetPoint() && hController.atSetPoint()) {
+        if (!(strafeController.atSetPoint() && straightController.atSetPoint() && hController.atSetPoint())) {
+            atTargetTimer.reset();
+        }
+
+        if (atTargetTimer.milliseconds() > atTargetMillis) {
             return PositionChangeActionEndResult.Successful;
         }
 
@@ -256,7 +286,8 @@ public class PositionChangeAction {
 
     protected void finish(@NotNull PositionChangeActionEndResult result) {
         if (result != PositionChangeActionEndResult.ForcefulTermination) {
-            ZERO.propagate(instance);
+            HypnoticAuto.sendZeroCommand();
+
             if (endSubscription != null) {
                 endSubscription.invoke(result);
             }
@@ -314,11 +345,11 @@ public class PositionChangeAction {
     }
 
     public void withCustomMaxRotationalSpeed(double maxRotationalSpeed) {
-        this.maxRotationalSpeed = maxRotationalSpeed;
+        this.maxRotationalPower = maxRotationalSpeed;
     }
 
     public void withCustomMaxTranslationalSpeed(double maxTranslationalSpeed) {
-        this.maxTranslationalSpeed = maxTranslationalSpeed;
+        this.maxTranslationalPower = maxTranslationalSpeed;
     }
 
     public void withCustomPathAlgorithm(@NotNull PathAlgorithm pathAlgorithm) {
@@ -327,6 +358,18 @@ public class PositionChangeAction {
 
     public void withAutomaticDeath(double automaticDeathMillis) {
         this.automaticDeathMillis = automaticDeathMillis;
+    }
+
+    public void withCustomHeadingPID(double p, double i, double d) {
+        hController = new PIDFController(new PIDCoefficients(p, i, d), (current, target, vel) -> 0.0);
+    }
+
+    public void withCustomHeadingPID(PIDCoefficients PID) {
+        hController = new PIDFController(PID, (current, target, vel) -> 0.0);
+    }
+
+    public void withExtendoOut() {
+        withCustomHeadingPID(extendoOutHeadingPID);
     }
 
     public void disableAutomaticDeath() {

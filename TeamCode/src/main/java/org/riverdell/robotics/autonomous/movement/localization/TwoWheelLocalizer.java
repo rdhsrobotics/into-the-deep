@@ -41,6 +41,11 @@ public class TwoWheelLocalizer extends TwoTrackingWheelLocalizer {
     public static double WHEEL_RADIUS = 0.94488189; // 48
     public static double GEAR_RATIO = 1;
 
+    /**
+     * The System.nanoTime() of the latest wheel position
+     */
+    public static double translateAcquisitionTime = 0.0;
+
     private final HypnoticRobot hypnoticRobot;
 
     private final Supplier<Integer> lateral;
@@ -48,8 +53,8 @@ public class TwoWheelLocalizer extends TwoTrackingWheelLocalizer {
 
     public TwoWheelLocalizer(HypnoticRobot hypnoticRobot) {
         super(Arrays.asList(
-                new Pose2d(-4, 0, 0), // left + right TODO TUNE X VALUE
-                new Pose2d(4, 0, Math.toRadians(90)) // front TODO TUNE X VALUE
+                new Pose2d(0.0, 0, 0), // left + right TODO TUNE X VALUE
+                new Pose2d(0.0, 0, Math.toRadians(90)) // front TODO TUNE X VALUE
         ));
 
         this.hypnoticRobot = hypnoticRobot;
@@ -66,6 +71,7 @@ public class TwoWheelLocalizer extends TwoTrackingWheelLocalizer {
     public List<Double> getWheelPositions() {
         double lateralPos = lateral.get();
         double perpPos = perpendicular.get();
+        translateAcquisitionTime = System.nanoTime();
         return Arrays.asList(
                 encoderTicksToInches(lateralPos),
                 encoderTicksToInches(perpPos)
@@ -89,6 +95,6 @@ public class TwoWheelLocalizer extends TwoTrackingWheelLocalizer {
 
     public Pose getPose() {
         Pose2d pose = getPoseEstimate();
-        return new Pose(-pose.getY(), pose.getX(), pose.getHeading());
+        return new Pose(pose.getY(), pose.getX(), pose.getHeading());
     }
 }
