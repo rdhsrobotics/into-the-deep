@@ -17,7 +17,8 @@ import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 
 abstract class HypnoticAuto(
-    internal val blockExecutionGroup: RootExecutionGroup.(HypnoticAuto) -> Unit
+    internal val blockExecutionGroup: RootExecutionGroup.(HypnoticAuto) -> Unit,
+    internal val onInit: (HypnoticAutoRobot) -> Unit = { }
 ) : HypnoticOpMode() {
     companion object {
         @JvmStatic
@@ -43,6 +44,9 @@ abstract class HypnoticAuto(
     inner class HypnoticAutoRobot : HypnoticRobot(this@HypnoticAuto) {
         val visionPipeline by lazy { VisionPipeline(this@HypnoticAuto) }
 
+        var activeX = -85
+        var activeY = 300
+
         override fun additionalSubSystems() = listOf<AbstractSubsystem>(visionPipeline)
         override fun initialize() {
             HypnoticAuto.instance = this@HypnoticAuto
@@ -52,6 +56,7 @@ abstract class HypnoticAuto(
 
             while (opModeInInit()) {
                 runPeriodics()
+                onInit(this)
 
                 imuProxy.allPeriodic()
                 drivetrain.localizer.update()
@@ -133,15 +138,6 @@ abstract class HypnoticAuto(
             thread { // subsystems thread
                 while (!isStopRequested) {
                     kotlin.runCatching {
-                        if (intakeComposite.state == InteractionCompositeState.Pickup &&
-                            intakeComposite.shouldAutoGuide) {
-
-                            if (visionPipeline.sampleDetection.guidanceVector != null) {
-                                intake.wrist.unwrapServo().position =
-                                    visionPipeline.sampleDetection.targetWristPosition
-                            }
-                        }
-
                         runPeriodics()
                     }.onFailure {
                         it.printStackTrace()

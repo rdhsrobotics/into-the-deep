@@ -43,6 +43,8 @@ class TestSampleDetection : LinearOpMode()
         somethingLikeThis.position = 0.49
 
         visionPipeline.sampleDetection.supplyCurrentWristPosition { somethingLikeThis.position }
+        visionPipeline.portal.setProcessorEnabled(visionPipeline.sampleDetection, true)
+        visionPipeline.portal.resumeStreaming()
 
         while (opModeIsActive())
         {

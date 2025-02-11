@@ -186,12 +186,12 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         wristState: WristState = WristState.Lateral,
         doNotUseAutoMode: Boolean = false,
         wideOpen: Boolean = false,
-        submersible: Boolean = false,
+        submersibleOverride: Int? = null,
     ) =
         stateMachineRestrict(InteractionCompositeState.Rest, InteractionCompositeState.Pickup) {
             intakeV4B.v4bUnlock()
                 .thenAcceptAsync {
-                    extension.extendToAndStayAt(if (submersible) 0 else IntakeConfig.MAX_EXTENSION)
+                    extension.extendToAndStayAt(submersibleOverride ?: IntakeConfig.MAX_EXTENSION)
                         .thenAccept {
                             if (robot !is HypnoticAuto.HypnoticAutoRobot) {
                                 extension.slides.idle()

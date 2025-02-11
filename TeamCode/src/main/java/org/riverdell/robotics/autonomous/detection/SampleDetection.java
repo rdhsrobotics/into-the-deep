@@ -48,7 +48,7 @@ public class SampleDetection implements CameraStreamSource, VisionProcessor {
     public static double Y_GUIDANCE_SCALE = 0.015;
 
     // dont tune
-    public static double MIN_SAMPLE_AREA = 225000.0;
+    public static double MIN_SAMPLE_AREA = 200000.0;
 /*
     public static double SAMPLE_AREA_AVERAGE_DURING_HOVER = 500000.0;
     public static double SAMPLE_AREA_AVERAGE_DURING_HOVER_MAX_DEVIATION = 100000.0;*/

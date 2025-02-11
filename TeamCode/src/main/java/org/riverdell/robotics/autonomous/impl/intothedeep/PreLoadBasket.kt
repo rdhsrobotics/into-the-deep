@@ -19,6 +19,7 @@ import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 
+
 @Autonomous(name = "4+0 Basket", group = "Test")
 class PreLoadBasket : HypnoticAuto({ opMode ->
     val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
@@ -41,19 +42,27 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
             opMode.robot.intakeComposite.prepareForPickup(
                 WristState.Lateral,
                 wideOpen = true,
-                doNotUseAutoMode = false
+                doNotUseAutoMode = false,
+                submersibleOverride = (opMode.robot as HypnoticAutoRobot).activeY
             )
 
             visionPipeline.portal.setProcessorEnabled(visionPipeline.sampleDetection, true)
             visionPipeline.portal.resumeStreaming()
         },
-        FieldWaypoint(Pose(-85.0, -8.0, 0.0), 25.0),
-        FieldWaypoint(Pose(-85.0, -18.0, 0.0), 10.0)
+        FieldWaypoint(
+            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), -8.0, 0.0),
+            25.0
+        ),
+        FieldWaypoint(
+            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), -18.0, 0.0),
+            10.0
+        )
     )
 
     val toBasket = listOf(
-        FieldWaypoint(Pose(-52.1, 20.0, 10.0), 35.0),
-        FieldWaypoint(depositHighBucket, 30.0),
+        FieldWaypoint(Pose(-52.1, 20.0, 10.0), 25.0),
+        FieldWaypoint(depositHighBucket.add(Pose(-5.0, -5.0, 0.0)), 25.0),
+        FieldWaypoint(depositHighBucket, 5.0),
     )
 
     opMode.robot.drivetrain.localizer.poseEstimate = startPose
@@ -90,10 +99,13 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
                 position.wristState,
                 // needs to go closer into the wall
                 doNotUseAutoMode = position.extendoMode,
-                wideOpen = true
+                wideOpen = true,
             )
 
-            navigateTo(position.pose) { withExtendoOut() }
+            navigateTo(position.pose) {
+                withExtendoOut()
+                disableAutomaticDeath()
+            }
             /*if (position.purePursuitPoints != null) {
                 *//* purePursuitNavigateTo(*position.purePursuitPoints.toTypedArray()) {
                      withAutomaticDeath(5000.0)
@@ -124,10 +136,10 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
     // preload
     depositToHighBasket(initial = true)
 
-    val lastPickup = Pose(-46.5, 4.0, (180).degrees)
+    val lastPickup = Pose(-45.7, 4.0, (180).degrees)
     val pickupPositions = listOf(
-        GroundPickupPosition(pose = Pose(-11.7, 17.5, (90.0).degrees)),
-        GroundPickupPosition(pose = Pose(-11.7, 34.5, (90.0).degrees)),
+        GroundPickupPosition(pose = Pose(-11.5, 18.0, (90.0).degrees)),
+        GroundPickupPosition(pose = Pose(-11.5, 34.5, (90.0).degrees)),
         GroundPickupPosition(
             pose = lastPickup,
             extendoMode = true,
@@ -154,19 +166,17 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
         single("Search for sample") {
             opMode.robot.intakeComposite.prepareForPickup(
                 WristState.Lateral,
-                wideOpen = true,
-                submersible = true
+                wideOpen = true
             ).join()
 
             Thread.sleep(400L)
 
             var position = 400
-            while (visionPipeline.sampleDetection.guidanceVector == null)
-            {
+            while (visionPipeline.sampleDetection.guidanceVector == null) {
                 position -= 100
-                if (position <= 0)
-                {
-                    opMode.robot.intakeComposite.intakeAndConfirm(slowMode = true, noPick = true).join()
+                if (position <= 0) {
+                    opMode.robot.intakeComposite.intakeAndConfirm(slowMode = true, noPick = true)
+                        .join()
                     opMode.robot.intakeComposite.confirmAndTransferAndReady().join()
 
                     return@single
@@ -230,5 +240,26 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
     }
 
     submersibleIntake()
-    submersibleIntake()
+
+    single("park near submersible") {
+        opMode.robot.intakeComposite
+            .initialOuttakeFromRest(OuttakeLevel.Bar1)
+
+        purePursuitNavigateTo(*parkSubmersible.toTypedArray()) {
+            withAutomaticDeath(9000.0)
+            withCustomMaxTranslationalSpeed(0.5)
+            withCustomMaxRotationalSpeed(0.5)
+        }
+    }
+}, {
+    if (instance.gamepad1.right_trigger > 0.1) {
+        it.activeX -= (it.opMode.gamepad1.right_trigger * 0.5).toInt()
+    }
+
+    if (instance.gamepad1.left_trigger > 0.1) {
+        it.activeY -= (it.opMode.gamepad1.left_trigger * 0.5).toInt()
+    }
+
+    it.opMode.telemetry.addLine("Target X (Position): ${it.activeX}")
+    it.opMode.telemetry.addLine("Target Y (Extension): ${it.activeY}")
 })

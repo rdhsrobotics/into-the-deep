@@ -44,7 +44,7 @@ public class PositionChangeAction {
     public static double TURN_MAX_VELOCITY = 5;
 
     public double maxTranslationalError = 0.8;
-    public double maxHeadingError = 1.6 * Math.PI / 180;
+    public double maxHeadingError = 1.4 * Math.PI / 180;
     public double maxTranslationalVelocity = 2.5;
     public double maxHeadingVelocity = 50;
     private final double atTargetMillis = 30;
@@ -128,8 +128,7 @@ public class PositionChangeAction {
             }
 
             double newHeadingAcquisitionTime = instance.getRobot().getDrivetrain().imu().getAcquisitionTime();
-            if (Math.abs(headingAcquisitionTime - newHeadingAcquisitionTime) > 10) {
-                // I2C register only updates at 100 Hz max
+            if (Math.abs(headingAcquisitionTime - newHeadingAcquisitionTime) > 10) { // I2C register only updates at 100 Hz max
                 double headingPeriod = Math.max(1.0 / 100, (newHeadingAcquisitionTime - headingAcquisitionTime) / 1E9);
                 double deltaHeading = robotPose.getHeading() - previousPose.getHeading();
                 if (deltaHeading > Math.PI) deltaHeading -= 2 * Math.PI;

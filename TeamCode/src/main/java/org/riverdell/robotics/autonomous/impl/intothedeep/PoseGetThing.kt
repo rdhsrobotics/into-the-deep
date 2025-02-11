@@ -14,7 +14,7 @@ class PoseGetThing : HypnoticAuto(something@{ opMode ->
         opMode.robot.intakeComposite.prepareForPickup(
             WristState.Lateral,
             wideOpen = true,
-            submersible = true
+            submersibleOverride = 400
         ).join()
 
         var position = 400
