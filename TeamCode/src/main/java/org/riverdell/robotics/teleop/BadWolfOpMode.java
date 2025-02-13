@@ -114,7 +114,7 @@ public class BadWolfOpMode extends LinearOpMode {
             int liftRightPosition = liftRight.getCurrentPosition();
             int liftLeftPosition = liftLeft.getCurrentPosition();
 
-            if (gamepad1.right_bumper && liftRightPosition < 2500 && liftLeftPosition < 2500) {
+            if (gamepad1.right_bumper && liftRightPosition < 2700 && liftLeftPosition < 2700) {
                 // Raise elevator and also tune for new Misumi and new ultra planetary gears.
                 liftRight.setPower(1.0);
                 liftLeft.setPower(1.0);
@@ -169,24 +169,25 @@ public class BadWolfOpMode extends LinearOpMode {
 
             if (gamepad1.b || gamepad2.b) {
                 // reset everything and go to default position
-                pivotRight.setPosition(0.4);
-                pivotLeft.setPosition(0.6);
+                pivotRight.setPosition(0.45);
+                pivotLeft.setPosition(0.55);
                 wrist.setPosition(0.47);
                 claw.setPosition(0.0);
             }
 
             if (gamepad1.y || gamepad2.y) {
                 // Move servos to specific positions. This is the hover point
-                pivotRight.setPosition(0.1);//real low to hover. Make higher to hover higher and make lower to hover lower
-                pivotLeft.setPosition(0.9);//these two numbers should always add up to hundred. otherwise u are breaking the servos
+                pivotRight.setPosition(0.16);//real low to hover. Make higher to hover higher and make lower to hover lower
+                pivotLeft.setPosition(0.84);//these two numbers should always add up to hundred. otherwise u are breaking the servos
             }
 
             if (gamepad1.x || gamepad2.x) {
                 // Check if servos are in the correct positions for to perform a grab
                 //so if y is pressed and then x is pressed it performs a grab.
-                if (pivotRight.getPosition() == 0.1 && pivotLeft.getPosition() == 0.9) {
+                if (pivotRight.getPosition() == 0.16 && pivotLeft.getPosition() == 0.84) {
                     performGrab();
                 }
+
             }
 
             // Telemetry data
@@ -217,7 +218,7 @@ public class BadWolfOpMode extends LinearOpMode {
         pivotRight.setPosition(0.0);
         pivotLeft.setPosition(1.0);
         timer.reset();
-        while (timer.seconds() < 0.5 && opModeIsActive()) {
+        while (timer.seconds() < 0.2 && opModeIsActive()) {
             // Wait for 0.5 second
             telemetry.addData("Grab Step", "Moving Servos: %.2f", timer.seconds());
             telemetry.update();
@@ -240,8 +241,8 @@ public class BadWolfOpMode extends LinearOpMode {
         }
 
         // Set right and left servo positions to 0.5
-        pivotRight.setPosition(0.37);
-        pivotLeft.setPosition(0.63);
+        pivotRight.setPosition(0.20);
+        pivotLeft.setPosition(0.80);
         claw.setPosition(0);
     }
 }
