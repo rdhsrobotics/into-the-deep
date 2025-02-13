@@ -1,24 +1,23 @@
 package org.riverdell.robotics.teleop;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.BNO055IMU;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
-import com.qualcomm.robotcore.external.navigation.AngleUnit;
-import com.qualcomm.robotcore.external.navigation.AxesOrder;
-import com.qualcomm.robotcore.external.navigation.AxesReference;
-import com.qualcomm.robotcore.external.navigation.Orientation;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 import java.util.Arrays;
 
 @TeleOp(name="Centric OpMode", group="Linear OpMode")
 public class FieldCentric extends LinearOpMode {
-    
+
     public class MecanumDrive {
         private DcMotor frontLeft;
         private DcMotor frontRight;
@@ -58,10 +57,10 @@ public class FieldCentric extends LinearOpMode {
             double v1 = magnitude * Math.sin(Math.toRadians((angle - heading) + 45));
             double v2 = magnitude * Math.sin(Math.toRadians((angle - heading) - 45));
             double[] powers = {
-                v1 + turn,
-                v2 + turn,
-                v2 - turn,
-                v1 - turn
+                    v1 + turn,
+                    v2 + turn,
+                    v2 - turn,
+                    v1 - turn
             };
 
             scale(powers);

@@ -9,13 +9,12 @@ import com.qualcomm.robotcore.util.Range;
 import org.riverdell.robotics.autonomous.movement.geometry.Pose;
 
 
-@TeleOp(name="Swyft Servo OpMode", group="Linear OpMode")
+@TeleOp(name="A Swyft Servo OpMode", group="Linear OpMode")
 public class swyftServo extends LinearOpMode {
     private final ElapsedTime runtime = new ElapsedTime();
     private Servo pivotRight = null;
     private Servo pivotLeft = null;
     private Servo claw = null;
-    private Servo wrist = null; // New servo variable
 
     private final Pose robotPose = new Pose(0, 0, 0); // Initialize the robot's pose
 
@@ -34,7 +33,8 @@ public class swyftServo extends LinearOpMode {
         pivotRight = hardwareMap.get(Servo.class, "pivotRight");
         pivotLeft = hardwareMap.get(Servo.class, "pivotLeft");
         claw = hardwareMap.get(Servo.class, "claw");
-        wrist = hardwareMap.get(Servo.class, "wrist"); // this init the new servo
+        // New servo variable
+        Servo wrist = hardwareMap.get(Servo.class, "wrist"); // this init the new servo
 
         liftRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         liftLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -170,14 +170,14 @@ public class swyftServo extends LinearOpMode {
 
             if (gamepad1.y || gamepad2.y) {
                 // Move servos to specific positions. This is the hover point
-                pivotRight.setPosition(0.33);//real low to hover. Make higher to hover higher and make lower to hover lower
-                pivotLeft.setPosition(0.67);//these two numbers should always add up to hundred. otherwise u are breaking the servos
+                pivotRight.setPosition(0.30);//real low to hover. Make higher to hover higher and make lower to hover lower
+                pivotLeft.setPosition(0.70);//these two numbers should always add up to hundred. otherwise u are breaking the servos
             }
 
             if (gamepad1.x || gamepad2.x) {
                 // Check if servos are in the correct positions for to perform a grab
                 //so if y is pressed and then x is pressed it performs a grab.
-                if (pivotRight.getPosition() == 0.33 && pivotLeft.getPosition() == 0.67) {
+                if (pivotRight.getPosition() == 0.30 && pivotLeft.getPosition() == 0.70) {
                     performGrab();
                 }
             }
@@ -198,7 +198,7 @@ public class swyftServo extends LinearOpMode {
         ElapsedTime timer = new ElapsedTime();
 
         // Open claw to position 0.45
-        claw.setPosition(0.42);
+        claw.setPosition(0.9);
         timer.reset();
         while (timer.seconds() < 0.05 && opModeIsActive()) {
             // Wait for 0.1 seconds
@@ -233,8 +233,8 @@ public class swyftServo extends LinearOpMode {
         }
 
         // Set right and left servo positions to 0.5
-        pivotRight.setPosition(0.37);
-        pivotLeft.setPosition(0.63);
+        pivotRight.setPosition(0.35);
+        pivotLeft.setPosition(0.65);
         claw.setPosition(0);
     }
 }
