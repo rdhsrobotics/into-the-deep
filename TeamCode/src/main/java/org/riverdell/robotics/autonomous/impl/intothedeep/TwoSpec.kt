@@ -10,7 +10,7 @@ import org.riverdell.robotics.subsystems.outtake.ClawState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 import org.riverdell.robotics.subsystems.outtake.PivotState
 
-@Autonomous(name = "2+0 do now")
+@Autonomous(name = "2+0 Normal")
 class TwoSpec : HypnoticAuto({ robot ->
     single("2+0") {
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)

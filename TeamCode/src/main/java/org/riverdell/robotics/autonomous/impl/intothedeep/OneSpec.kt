@@ -10,9 +10,9 @@ import org.riverdell.robotics.subsystems.outtake.ClawState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 import org.riverdell.robotics.subsystems.outtake.PivotState
 
-@Autonomous(name = "Specimen + Park")
+@Autonomous(name = "Usual + Park")
 class OneSpec : HypnoticAuto({ robot ->
-    single("Specimen + Park") {
+    single("Usual + Park") {
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
         (OuttakeLevel.lowBar2)
 

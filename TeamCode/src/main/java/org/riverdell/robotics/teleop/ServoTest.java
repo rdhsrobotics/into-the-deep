@@ -12,6 +12,10 @@ public class ServoTest extends LinearOpMode {
     private Servo wrist = null;
     private Servo claw = null;
 
+    // Initialize the servo position variables
+    private double pivotRightPosition = 0.5;
+    private double pivotLeftPosition = 0.5;
+
     @Override
     public void runOpMode() {
         // Initialize servos
@@ -44,13 +48,27 @@ public class ServoTest extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Control pivot servos
-            if (gamepad1.dpad_down) {
-                pivotRight.setPosition(Range.clip(pivotRight.getPosition() + 0.01, 0.0, 1.0));
-                pivotLeft.setPosition(Range.clip(pivotLeft.getPosition() - 0.01, 0.0, 1.0));
-            } else if (gamepad1.dpad_up) {
-                pivotRight.setPosition(Range.clip(pivotRight.getPosition() - 0.01, 0.0, 1.0));
-                pivotLeft.setPosition(Range.clip(pivotLeft.getPosition() + 0.01, 0.0, 1.0));
+            // Initialize the servo position variables
+            double pivotRightPosition = 0.5;
+            double pivotLeftPosition = 0.5;
+
+// ...
+
+            while (opModeIsActive()) {
+                // Control pivot servos
+                if (gamepad1.dpad_down) {
+                    pivotRightPosition = Range.clip(pivotRightPosition + 0.01, 0.0, 1.0);
+                    pivotLeftPosition = Range.clip(pivotLeftPosition - 0.01, 0.0, 1.0);
+                    pivotRight.setPosition(pivotRightPosition);
+                    pivotLeft.setPosition(pivotLeftPosition);
+                } else if (gamepad1.dpad_up) {
+                    pivotRightPosition = Range.clip(pivotRightPosition - 0.01, 0.0, 1.0);
+                    pivotLeftPosition = Range.clip(pivotLeftPosition + 0.01, 0.0, 1.0);
+                    pivotRight.setPosition(pivotRightPosition);
+                    pivotLeft.setPosition(pivotLeftPosition);
+                }
+
+                // ...
             }
 
             // Control claw servo

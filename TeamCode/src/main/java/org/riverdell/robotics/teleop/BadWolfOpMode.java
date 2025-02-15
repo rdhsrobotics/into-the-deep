@@ -215,8 +215,8 @@ public class BadWolfOpMode extends LinearOpMode {
         }
 
         // Move servos to new positions
-        pivotRight.setPosition(0.0);
-        pivotLeft.setPosition(1.0);
+        pivotRight.setPosition(0.2);
+        pivotLeft.setPosition(0.8);
         timer.reset();
         while (timer.seconds() < 0.2 && opModeIsActive()) {
             // Wait for 0.5 second

@@ -58,8 +58,8 @@ public class swyftServo extends LinearOpMode {
         claw.setPosition(0);      // Initial position for master claw
         wrist.setPosition(0.47);       // Initial position for claw rotation
 
-        telemetry.addData("Status", "Sigmalicious Skibidi Ready for Launch");
-        telemetry.speak("Sigmalicious Skibidi Ready for Launch");
+        telemetry.addData("Status", "Init");
+        telemetry.speak("Ready for Launch");
 
         telemetry.update();
 
@@ -207,10 +207,10 @@ public class swyftServo extends LinearOpMode {
         }
 
         // Move servos to new positions
-        pivotRight.setPosition(0.25);
-        pivotLeft.setPosition(0.75);
+        pivotRight.setPosition(0.2);
+        pivotLeft.setPosition(0.8);
         timer.reset();
-        while (timer.seconds() < 0.05 && opModeIsActive()) {
+        while (timer.seconds() < 0.2 && opModeIsActive()) {
             // Wait for 0.5 second
             telemetry.addData("Grab Step", "Moving Servos: %.2f", timer.seconds());
             telemetry.update();
@@ -227,14 +227,14 @@ public class swyftServo extends LinearOpMode {
 
         // Wait for 0.3 seconds before setting servos
         timer.reset();
-        while (timer.seconds() < 0.2     && opModeIsActive()) {
+        while (timer.seconds() < 0.1     && opModeIsActive()) {
             telemetry.addData("Grab Step", "Waiting before setting servos: %.2f", timer.seconds());
             telemetry.update();
         }
 
         // Set right and left servo positions to 0.5
-        pivotRight.setPosition(0.35);
-        pivotLeft.setPosition(0.65);
+        pivotRight.setPosition(0.20);
+        pivotLeft.setPosition(0.80);
         claw.setPosition(0);
     }
 }
