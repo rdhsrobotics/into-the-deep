@@ -5,20 +5,17 @@ import io.liftgate.robotics.mono.pipeline.RootExecutionGroup
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
 import org.riverdell.robotics.HypnoticOpMode
 import org.riverdell.robotics.HypnoticRobot
-import org.riverdell.robotics.autonomous.detection.SampleDetectionPipelinePNP.AnalyzedStone
 import org.riverdell.robotics.autonomous.detection.SampleType
 import org.riverdell.robotics.autonomous.detection.VisionPipeline
 import org.riverdell.robotics.autonomous.movement.DrivetrainUpdates
 import org.riverdell.robotics.autonomous.movement.PositionChangeAction
 import org.riverdell.robotics.autonomous.movement.degrees
-import org.riverdell.robotics.autonomous.movement.konfig.NavigationConfig
-import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 
-abstract class HypnoticAuto constructor(
+abstract class HypnoticAuto(
     val sampleType: SampleType = SampleType.Red,
     internal val blockExecutionGroup: RootExecutionGroup.(HypnoticAuto) -> Unit,
     internal val onInit: (HypnoticAutoRobot) -> Unit = { }
@@ -50,7 +47,7 @@ abstract class HypnoticAuto constructor(
     }
 
     inner class HypnoticAutoRobot : HypnoticRobot(this@HypnoticAuto) {
-        val visionPipeline by lazy { VisionPipeline(sampleType, this@HypnoticAuto) }
+        val visionPipeline by lazy { VisionPipeline(this@HypnoticAuto, sampleType) }
 
         var activeX = -85
         var activeY = 300

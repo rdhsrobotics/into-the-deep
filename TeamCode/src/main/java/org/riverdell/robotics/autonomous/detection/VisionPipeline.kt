@@ -13,8 +13,8 @@ import org.firstinspires.ftc.vision.VisionPortal.CameraState
  * for an op mode.
  */
 class VisionPipeline(
+    private val opMode: LinearOpMode,
     val coloredType: SampleType = SampleType.Red,
-    private val opMode: LinearOpMode
 ) : AbstractSubsystem()
 {
     lateinit var portal: VisionPortal
