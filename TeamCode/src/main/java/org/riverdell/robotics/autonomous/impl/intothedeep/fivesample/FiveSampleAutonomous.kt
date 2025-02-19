@@ -1,16 +1,14 @@
-package org.riverdell.robotics.autonomous.impl.intothedeep
+package org.riverdell.robotics.autonomous.impl.intothedeep.fivesample
 
 import com.acmerobotics.roadrunner.geometry.Pose2d
-import com.acmerobotics.roadrunner.geometry.Vector2d
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import io.liftgate.robotics.mono.pipeline.ExecutionGroup
-import io.liftgate.robotics.mono.pipeline.simultaneous
 import io.liftgate.robotics.mono.pipeline.single
 import org.riverdell.robotics.autonomous.HypnoticAuto
+import org.riverdell.robotics.autonomous.detection.SampleType
+import org.riverdell.robotics.autonomous.impl.intothedeep.GroundPickupPosition
+import org.riverdell.robotics.autonomous.impl.intothedeep.visionIntake
 import org.riverdell.robotics.autonomous.movement.degrees
-import org.riverdell.robotics.autonomous.movement.geometry.Point
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
-import org.riverdell.robotics.autonomous.movement.guidedvectorfield.Vector2D
 import org.riverdell.robotics.autonomous.movement.navigateTo
 import org.riverdell.robotics.autonomous.movement.purePursuitNavigateTo
 import org.riverdell.robotics.autonomous.movement.purepursuit.ActionWaypoint
@@ -19,9 +17,9 @@ import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 
-
-@Autonomous(name = "4+0 Basket", group = "Test")
-class PreLoadBasket : HypnoticAuto({ opMode ->
+abstract class FiveSampleAutonomous(
+    sampleType: SampleType
+) : HypnoticAuto(sampleType, { opMode ->
     val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
 
     val startPose = Pose2d(0.0, 0.0, 0.degrees)
@@ -46,8 +44,7 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
                 submersibleOverride = (opMode.robot as HypnoticAutoRobot).activeY
             )
 
-            visionPipeline.portal.setProcessorEnabled(visionPipeline.sampleDetection, true)
-            visionPipeline.portal.resumeStreaming()
+            visionPipeline.resume()
         },
         FieldWaypoint(
             Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), -8.0, 0.0),
@@ -64,6 +61,32 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
         FieldWaypoint(depositHighBucket.add(Pose(-5.0, -5.0, 0.0)), 25.0),
         FieldWaypoint(depositHighBucket, 5.0),
     )
+
+    fun submersibleCycle() {
+        single("submerse itself") {
+            purePursuitNavigateTo(*toSubmersible.toTypedArray()) {
+                withAutomaticDeath(10000.0)
+                withCustomMaxTranslationalSpeed(1.0)
+                withCustomMaxRotationalSpeed(1.0)
+            }
+        }
+
+        visionIntake(opMode)
+
+        single("Return to basket") {
+            purePursuitNavigateTo(*toBasket.toTypedArray()) {
+                withAutomaticDeath(10000.0)
+                withCustomMaxTranslationalSpeed(1.0)
+                withCustomMaxRotationalSpeed(1.0)
+            }
+
+            if (!opMode.robot.intakeComposite.waitForState(org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState.Outtaking)) {
+                return@single
+            }
+
+            opMode.robot.intakeComposite.outtakeCompleteAndRest().join()
+        }
+    }
 
     opMode.robot.drivetrain.localizer.poseEstimate = startPose
 
@@ -106,18 +129,6 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
                 withExtendoOut()
                 disableAutomaticDeath()
             }
-            /*if (position.purePursuitPoints != null) {
-                *//* purePursuitNavigateTo(*position.purePursuitPoints.toTypedArray()) {
-                     withAutomaticDeath(5000.0)
-                 }*//*
-                navigateTo(position.pose) {*//*
-                    withCustomMaxRotationalSpeed(0.4)
-                    withCustomMaxTranslationalSpeed(0.4)*//*
-                    disableAutomaticDeath()
-                }
-            } else {
-                navigateTo(position.pose)
-            }*/
         }
     }
 
@@ -154,96 +165,11 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
         depositToHighBasket()
     }
 
-    fun submersibleIntake() {
-        single("submerse itself") {
-            purePursuitNavigateTo(*toSubmersible.toTypedArray()) {
-                withAutomaticDeath(10000.0)
-                withCustomMaxTranslationalSpeed(1.0)
-                withCustomMaxRotationalSpeed(1.0)
-            }
-        }
-
-        single("Search for sample") {
-            opMode.robot.intakeComposite.prepareForPickup(
-                WristState.Lateral,
-                wideOpen = true
-            ).join()
-
-            Thread.sleep(400L)
-
-            var position = 400
-            while (visionPipeline.sampleDetection.guidanceVector == null) {
-                position -= 100
-                if (position <= 0) {
-                    opMode.robot.intakeComposite.intakeAndConfirm(slowMode = true, noPick = true)
-                        .join()
-                    opMode.robot.intakeComposite.confirmAndTransferAndReady().join()
-
-                    return@single
-                }
-
-                opMode.robot.extension.extendToAndStayAt(position).join()
-                Thread.sleep(300L)
-            }
-        }
-
-        var rotationAngle = 0.0
-        var vector = Vector2d(0.0, 0.0)
-        single("Pick up sample") {
-            val selection = (opMode.robot as HypnoticAutoRobot)
-                .visionPipeline.sampleDetection
-
-            val guidanceVector = selection.guidanceVector
-
-            if (guidanceVector == null) {
-                opMode.robot.intakeComposite.intakeAndConfirm(slowMode = true, noPick = true).join()
-                opMode.robot.intakeComposite.confirmAndTransferAndReady().join()
-
-                return@single
-            }
-
-            visionPipeline.pause()
-
-            rotationAngle = 0.5 + (selection.guidanceRotationAngle / 200.0)
-            vector = guidanceVector
-        }
-
-        single("Go to sample") {
-            val current = opMode.robot.drivetrain.localizer.pose
-            val target = Pose(current.x + vector.x, current.y + vector.y, 0.0)
-            opMode.robot.hardware.intakeWrist.position = rotationAngle
-            navigateTo(target) { withExtendoOut() }
-        }
-
-        single("Intake sample") {
-            opMode.robot.intakeComposite.intakeAndConfirm(slowMode = true).join()
-            opMode.robot.intakeComposite.confirmAndTransferAndReady()
-                .thenAcceptAsync {
-                    opMode.robot.intakeComposite
-                        .initialOuttake(OuttakeLevel.SomethingLikeThat)
-                }
-        }
-
-        single("Return to basket") {
-            purePursuitNavigateTo(*toBasket.toTypedArray()) {
-                withAutomaticDeath(10000.0)
-                withCustomMaxTranslationalSpeed(1.0)
-                withCustomMaxRotationalSpeed(1.0)
-            }
-
-            if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Outtaking)) {
-                return@single
-            }
-
-            opMode.robot.intakeComposite.outtakeCompleteAndRest().join()
-        }
-    }
-
-    submersibleIntake()
+    submersibleCycle()
 
     single("park near submersible") {
         opMode.robot.intakeComposite
-            .initialOuttakeFromRest(OuttakeLevel.Bar1)
+            .initialOuttakeFromRest(OuttakeLevel.Bar2)
 
         purePursuitNavigateTo(*parkSubmersible.toTypedArray()) {
             withAutomaticDeath(9000.0)
@@ -262,4 +188,5 @@ class PreLoadBasket : HypnoticAuto({ opMode ->
 
     it.opMode.telemetry.addLine("Target X (Position): ${it.activeX}")
     it.opMode.telemetry.addLine("Target Y (Extension): ${it.activeY}")
-})
+}
+)

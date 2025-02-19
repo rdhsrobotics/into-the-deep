@@ -3,15 +3,15 @@ package org.riverdell.robotics.autonomous.detection;
 import org.opencv.core.Scalar;
 
 public enum SampleType {
-    BLUE(
+    Blue(
         new Scalar(90.0, 100.0, 100.0),
         new Scalar(130.0, 255.0, 255.0)
     ),
-    YELLOW(
+    Yellow(
         new Scalar(20.0, 100.0, 100.0),
         new Scalar(30.0, 255.0, 255.0)
     ),
-    RED(
+    Red(
         new Scalar(0.0, 100.0, 100.0),
         new Scalar(10.0, 255.0, 255.0)
     );

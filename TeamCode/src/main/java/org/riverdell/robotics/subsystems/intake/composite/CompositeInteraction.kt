@@ -12,7 +12,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     var state = InteractionCompositeState.Rest
     var attemptedState: InteractionCompositeState? = null
     var attemptTime = System.currentTimeMillis()
-    var outtakeLevel = OuttakeLevel.Bar1
+    var outtakeLevel = OuttakeLevel.Bar2
     var lastOuttakeBegin = System.currentTimeMillis()
     var shouldAutoGuide = false
 
@@ -54,7 +54,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             .exceptionally { return@exceptionally null }
     }
 
-    fun initialOuttakeFromRest(preferredLevel: OuttakeLevel = OuttakeLevel.Bar1) =
+    fun initialOuttakeFromRest(preferredLevel: OuttakeLevel = OuttakeLevel.Bar2) =
         stateMachineRestrict(
             InteractionCompositeState.Rest,
             InteractionCompositeState.Outtaking,
@@ -103,7 +103,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     ) {
         CompletableFuture.runAsync {
             outtake.openClaw()
-            Thread.sleep(125L)
+            Thread.sleep(300L)
 
             outtake.readyRotation()
             outtake.readyCoaxial().join()
@@ -268,6 +268,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             outtake.transferCoaxial()
         ).join()
 
+
         CompletableFuture.allOf(
             outtake.transferRotationForce(),
             outtake.transferCoaxialForce()
@@ -278,7 +279,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             intake.openIntake(),
             outtake.closeClaw()
         )
-        Thread.sleep(150)
+        Thread.sleep(50)
 
         CompletableFuture.allOf(
             outtake.depositRotation()

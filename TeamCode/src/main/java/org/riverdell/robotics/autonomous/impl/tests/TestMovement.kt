@@ -11,9 +11,7 @@ import org.riverdell.robotics.autonomous.movement.navigateTo
 class TestMovement : HypnoticAuto({ opMode ->
     single("go to position") {
         val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
-        visionPipeline.portal.setProcessorEnabled(visionPipeline.sampleDetection, false)
-        visionPipeline.portal.stopStreaming()
-        visionPipeline.portal.stopLiveView()
+        visionPipeline.pause()
 
         navigateTo(Pose(TestConfig.x, TestConfig.y, TestConfig.turn.degrees)) {withAutomaticDeath(TestConfig.automaticDeath)}
     }

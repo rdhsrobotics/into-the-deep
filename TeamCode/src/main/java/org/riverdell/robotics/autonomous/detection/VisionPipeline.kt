@@ -6,29 +6,55 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName
 import org.firstinspires.ftc.vision.VisionPortal
+import org.firstinspires.ftc.vision.VisionPortal.CameraState
 
 /**
  * Manages and configures all [VisionPortal] processors
  * for an op mode.
  */
 class VisionPipeline(
+    val coloredType: SampleType = SampleType.Red,
     private val opMode: LinearOpMode
 ) : AbstractSubsystem()
 {
     lateinit var portal: VisionPortal
-    lateinit var sampleDetection: SampleDetection
+    lateinit var yellowPipeline: SampleDetectionPipelinePNP
+    lateinit var coloredPipeline: SampleDetectionPipelinePNP
 
-    override fun start()
-    {
+    var detectedSample: SampleDetectionPipelinePNP.AnalyzedStone? = null
+    var paused = false
 
+    override fun start() {
     }
 
     override fun periodic() {
+        if (!paused) {
+            yellowPipeline.detectedStones.forEach {
+                if (detectedSample == null) { detectedSample = it }
+                if (it.translate.radius() < detectedSample!!.translate.radius()) {
+                    detectedSample = it
+                }
+            }
+
+            if (detectedSample == null) {
+                coloredPipeline.detectedStones.forEach {
+                    if (detectedSample == null) { detectedSample = it }
+                    if (it.translate.radius() < detectedSample!!.translate.radius()) {
+                        detectedSample = it
+                    }
+                }
+            }
+        }
     }
 
     override fun doInitialize()
     {
-        sampleDetection = SampleDetection()
+        coloredPipeline = SampleDetectionPipelinePNP()
+        coloredPipeline.sampleType = coloredType
+
+        yellowPipeline = SampleDetectionPipelinePNP()
+        yellowPipeline.sampleType = SampleType.Yellow
+
         portal = VisionPortal.Builder()
             .setCamera(
                 opMode.hardwareMap["webcam"] as WebcamName
@@ -36,23 +62,37 @@ class VisionPipeline(
             .setCameraResolution(Size(1280, 960))
             .enableLiveView(false)
             .setAutoStopLiveView(true)
-            .addProcessors(sampleDetection)
+            .addProcessors(
+                yellowPipeline,
+                coloredPipeline
+            )
             .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
             .build()
 
         FtcDashboard.getInstance().startCameraStream(
-            sampleDetection,
+            yellowPipeline,
             30.0
         )
 
         pause()
     }
 
-    fun pause()
-    {
-        portal.setProcessorEnabled(sampleDetection, false)
+    fun pause() {
+        portal.setProcessorEnabled(yellowPipeline, false)
+        portal.setProcessorEnabled(coloredPipeline, false)
         portal.stopStreaming()
         portal.stopLiveView()
+        paused = true
+    }
+
+    fun resume() {
+        portal.setProcessorEnabled(yellowPipeline, true)
+        portal.setProcessorEnabled(coloredPipeline, true)
+        if (portal.cameraState != CameraState.ERROR) {
+            portal.resumeStreaming()
+            portal.resumeLiveView()
+        }
+        paused = false
     }
 
     override fun dispose()

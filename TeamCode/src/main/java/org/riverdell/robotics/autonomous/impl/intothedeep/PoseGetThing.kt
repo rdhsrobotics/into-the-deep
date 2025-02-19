@@ -4,71 +4,14 @@ import com.acmerobotics.roadrunner.geometry.Vector2d
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import io.liftgate.robotics.mono.pipeline.single
 import org.riverdell.robotics.autonomous.HypnoticAuto
+import org.riverdell.robotics.autonomous.movement.geometry.Point
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
 import org.riverdell.robotics.autonomous.movement.navigateTo
 import org.riverdell.robotics.subsystems.intake.WristState
 
 @Autonomous(name = "Pose Getter", group = "Test")
 class PoseGetThing : HypnoticAuto(something@{ opMode ->
-    single("Search for sample") {
-        opMode.robot.intakeComposite.prepareForPickup(
-            WristState.Lateral,
-            wideOpen = true,
-            submersibleOverride = 400
-        ).join()
-
-        var position = 400
-        while ((opMode.robot as HypnoticAutoRobot)
-                .visionPipeline.sampleDetection.guidanceVector == null)
-        {
-            position -= 100
-            if (position <= 0)
-            {
-                opMode.robot.intakeComposite.intakeAndConfirm(slowMode = true, noPick = true).join()
-                opMode.robot.intakeComposite.confirmAndTransferAndReady().join()
-
-                this@something.terminateMidExecution()
-                return@single
-            }
-
-            opMode.robot.extension.extendToAndStayAt(position).join()
-        }
-    }
-
-    var rotationAngle = 0.0
-    var vector = Vector2d(0.0, 0.0)
-    single("find and detect sample") {
-        Thread.sleep(300L)
-        val selection = (opMode.robot as HypnoticAutoRobot)
-            .visionPipeline.sampleDetection
-        val guidanceVector = selection.guidanceVector
-        if (guidanceVector == null)
-        {
-            opMode.robot.intakeComposite.intakeAndConfirm(slowMode = true, noPick = true).join()
-            opMode.robot.intakeComposite.confirmAndTransferAndReady().join()
-
-            this@something.terminateMidExecution()
-            return@single
-        }
-
-        rotationAngle = 0.5 + (selection.guidanceRotationAngle / 200.0)
-        vector = guidanceVector
-
-        (opMode.robot as HypnoticAutoRobot)
-            .visionPipeline.portal.stopStreaming()
-    }
-
-    single("ieojfi") {
-        val current = opMode.robot.drivetrain.localizer.pose
-        val target = Pose(current.x + vector.x, current.y + vector.y, 0.0)
-        opMode.robot.hardware.intakeWrist.position = rotationAngle
-        navigateTo(target) {withExtendoOut()}
-    }
-
-    single("thing") {
-        opMode.robot.intakeComposite.intakeAndConfirm(slowMode = true).join()
-        opMode.robot.intakeComposite.confirmAndTransferAndReady().join()
-    }
+    visionIntake(opMode)
 
     /**
      * with((opMode.robot as HypnoticAutoRobot).visionPipeline.sampleDetection)

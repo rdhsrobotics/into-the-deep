@@ -84,7 +84,7 @@ public class SampleDetection implements CameraStreamSource, VisionProcessor {
     public static double MAX_G = 0.0;
     public static double MAX_R = 0.0;
 
-    private SampleType detectionType = SampleType.YELLOW;
+    private SampleType detectionType = SampleType.Yellow;
     private Supplier<Double> currentWristPosition = () -> 0.0;
 
     private double targetWristPosition = 0.49;

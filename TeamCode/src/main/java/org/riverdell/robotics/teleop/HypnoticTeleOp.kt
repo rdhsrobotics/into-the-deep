@@ -7,6 +7,7 @@ import org.riverdell.robotics.HypnoticOpMode
 import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.intake.composite.IntakeConfig
+import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
@@ -39,6 +40,11 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
 
             multipleTelemetry.addLine("Started!")
             multipleTelemetry.update()
+
+            if (ManagedMotorGroup.keepEncoderPositions)
+            {
+                lift.extendToAndStayAt(0).join()
+            }
 
             var loopTime: Long
             while (teleOp.opModeIsActive()) {

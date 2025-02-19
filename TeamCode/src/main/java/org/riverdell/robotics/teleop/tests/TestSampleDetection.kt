@@ -9,14 +9,11 @@ import org.riverdell.robotics.autonomous.detection.VisionPipeline
     name = "Test | Sample Vision",
     group = "Tests"
 )
-class TestSampleDetection : LinearOpMode()
-{
+class TestSampleDetection : LinearOpMode() {
     val visionPipeline by lazy { VisionPipeline(this) }
-    override fun runOpMode()
-    {
+    override fun runOpMode() {
         waitForStart()
-        if (isStopRequested)
-        {
+        if (isStopRequested) {
             return
         }
 
@@ -40,16 +37,17 @@ class TestSampleDetection : LinearOpMode()
             }
 
 
-        somethingLikeThis.position = 0.49
+        somethingLikeThis.position = 0.5
+        visionPipeline.resume()
 
-        visionPipeline.sampleDetection.supplyCurrentWristPosition { somethingLikeThis.position }
-        visionPipeline.portal.setProcessorEnabled(visionPipeline.sampleDetection, true)
-        visionPipeline.portal.resumeStreaming()
-
-        while (opModeIsActive())
-        {
-            somethingLikeThis.position = visionPipeline.sampleDetection.targetWristPosition
-            Thread.sleep(20L)
+        while (opModeIsActive()) {
+            somethingLikeThis.position = 0.5
+            val detected = visionPipeline.coloredPipeline.chooseCloseSample()
+            println(detected?.angle)
+            val angle = detected?.angle ?: 0.0
+            Thread.sleep(1000)
+            somethingLikeThis.position = 0.5 + (angle - 90) / 290
+            Thread.sleep(500)
         }
 
         visionPipeline.dispose()

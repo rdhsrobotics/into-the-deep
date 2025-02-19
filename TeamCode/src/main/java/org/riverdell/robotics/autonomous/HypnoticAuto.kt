@@ -5,6 +5,8 @@ import io.liftgate.robotics.mono.pipeline.RootExecutionGroup
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
 import org.riverdell.robotics.HypnoticOpMode
 import org.riverdell.robotics.HypnoticRobot
+import org.riverdell.robotics.autonomous.detection.SampleDetectionPipelinePNP.AnalyzedStone
+import org.riverdell.robotics.autonomous.detection.SampleType
 import org.riverdell.robotics.autonomous.detection.VisionPipeline
 import org.riverdell.robotics.autonomous.movement.DrivetrainUpdates
 import org.riverdell.robotics.autonomous.movement.PositionChangeAction
@@ -16,10 +18,16 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 
-abstract class HypnoticAuto(
+abstract class HypnoticAuto constructor(
+    val sampleType: SampleType = SampleType.Red,
     internal val blockExecutionGroup: RootExecutionGroup.(HypnoticAuto) -> Unit,
     internal val onInit: (HypnoticAutoRobot) -> Unit = { }
 ) : HypnoticOpMode() {
+    constructor(
+        blockExecutionGroup: RootExecutionGroup.(HypnoticAuto) -> Unit,
+        onInit: (HypnoticAutoRobot) -> Unit = { }
+    ) : this(SampleType.Red, blockExecutionGroup, onInit)
+
     companion object {
         @JvmStatic
         lateinit var instance: HypnoticAuto
@@ -42,7 +50,7 @@ abstract class HypnoticAuto(
     }
 
     inner class HypnoticAutoRobot : HypnoticRobot(this@HypnoticAuto) {
-        val visionPipeline by lazy { VisionPipeline(this@HypnoticAuto) }
+        val visionPipeline by lazy { VisionPipeline(sampleType, this@HypnoticAuto) }
 
         var activeX = -85
         var activeY = 300
@@ -133,8 +141,6 @@ abstract class HypnoticAuto(
                 }
             }
 
-            visionPipeline.sampleDetection.supplyCurrentWristPosition { intake.wrist.unwrapServo().position }
-
             thread { // subsystems thread
                 while (!isStopRequested) {
                     kotlin.runCatching {
@@ -152,8 +158,6 @@ abstract class HypnoticAuto(
             }
 
             var operatingThreadFinishedProperly = false
-            ManagedMotorGroup.keepEncoderPositions = true
-
             val operatingThread = thread {
                 runCatching {
                     executionGroup.executeBlocking()
@@ -166,6 +170,7 @@ abstract class HypnoticAuto(
 
             while (opModeIsActive()) {
                 if (operatingThreadFinishedProperly) {
+                    ManagedMotorGroup.keepEncoderPositions = true
                     break
                 }
 
