@@ -170,14 +170,14 @@ public class swyftServo extends LinearOpMode {
 
             if (gamepad1.y || gamepad2.y) {
                 // Move servos to specific positions. This is the hover point
-                pivotRight.setPosition(0.30);//real low to hover. Make higher to hover higher and make lower to hover lower
-                pivotLeft.setPosition(0.70);//these two numbers should always add up to hundred. otherwise u are breaking the servos
+                pivotRight.setPosition(0.35);//real low to hover. Make higher to hover higher and make lower to hover lower
+                pivotLeft.setPosition(0.65);//these two numbers should always add up to hundred. otherwise u are breaking the servos
             }
 
             if (gamepad1.x || gamepad2.x) {
                 // Check if servos are in the correct positions for to perform a grab
                 //so if y is pressed and then x is pressed it performs a grab.
-                if (pivotRight.getPosition() == 0.30 && pivotLeft.getPosition() == 0.70) {
+                if (pivotRight.getPosition() == 0.35 && pivotLeft.getPosition() == 0.65) {
                     performGrab();
                 }
             }
@@ -207,10 +207,10 @@ public class swyftServo extends LinearOpMode {
         }
 
         // Move servos to new positions
-        pivotRight.setPosition(0.2);
-        pivotLeft.setPosition(0.8);
+        pivotRight.setPosition(0.3);
+        pivotLeft.setPosition(0.7);
         timer.reset();
-        while (timer.seconds() < 0.2 && opModeIsActive()) {
+        while (timer.seconds() < 0.1 && opModeIsActive()) {
             // Wait for 0.5 second
             telemetry.addData("Grab Step", "Moving Servos: %.2f", timer.seconds());
             telemetry.update();
@@ -220,7 +220,7 @@ public class swyftServo extends LinearOpMode {
         claw.setPosition(0);
 
         // Wait until the claw is closed
-        while (Math.abs(claw.getPosition() - 0) > 0.01 && opModeIsActive()) {
+        while (Math.abs(claw.getPosition() - 0) > 0.2 && opModeIsActive()) {
             telemetry.addData("Grab Step", "Closing Claw");
             telemetry.update();
         }

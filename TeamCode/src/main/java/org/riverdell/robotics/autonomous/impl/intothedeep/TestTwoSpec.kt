@@ -17,22 +17,22 @@ class TestTwoSpec : HypnoticAuto({ robot ->
     single("Ultra fast 2+0") {
         // Define waypoints for Pure Pursuit navigation
         val waypoints = arrayOf(
-            FieldWaypoint(Pose(0.0, -28.4, 0.degrees), 15.0), // Specimen Scoring Line Up
-            FieldWaypoint(Pose(-21.74, -19.19, 0.degrees), 15.0), // Waypoint a little back to avoid hitting bar
-            FieldWaypoint(Pose(-36.6, -28.8, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-38.0, -49.0, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-44.0, -51.65, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-45.6, -15.72, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-44.0, -51.65, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-54.37, -54.0, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-55.8, -17.5, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-56.9, -56.2, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-64.3, -66.1, 0.degrees), 15.0), // Diagonal Right
-            FieldWaypoint(Pose(-63.3, -25.4, 0.degrees), 15.0), // All the way back and park
-            FieldWaypoint(Pose(-63.3, -45.4, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-23.3, -17.0, 0.degrees), 15.0),
-            FieldWaypoint(Pose(-33.3, -10.33, 270.degrees), 15.0),
-            FieldWaypoint(Pose(0.0, -36.4, 0.degrees), 15.0) // Return to starting position
+            FieldWaypoint(Pose(0.0, -28.4, 0.degrees), 5.0), // Specimen Scoring Line Up
+            FieldWaypoint(Pose(-21.74, -19.19, 0.degrees), 5.0), // Waypoint a little back to avoid hitting bar
+            FieldWaypoint(Pose(-36.6, -28.8, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-38.0, -49.0, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-44.0, -51.65, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-45.6, -15.72, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-44.0, -51.65, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-54.37, -54.0, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-55.8, -17.5, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-56.9, -56.2, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-64.3, -66.1, 0.degrees), 5.0), // Diagonal Right
+            FieldWaypoint(Pose(-63.3, -25.4, 0.degrees), 5.0), // All the way back and park
+            FieldWaypoint(Pose(-63.3, -45.4, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-23.3, -17.0, 0.degrees), 5.0),
+            FieldWaypoint(Pose(-33.3, -10.33, 270.degrees), 5.0),
+            FieldWaypoint(Pose(0.0, -36.4, 0.degrees), 5.0) // Return to starting position
         )
 
         // Initial setup: Move outtake to low bar position
