@@ -145,7 +145,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 @SuppressWarnings("WeakerAccess")
 public class FtcRobotControllerActivity extends Activity
-  {
+{
   public static final String TAG = "RCActivity";
   public String getTag() { return TAG; }
 
@@ -201,63 +201,63 @@ public class FtcRobotControllerActivity extends Activity
 
   }
 
-    public class CustomizedExceptionHandler implements Thread.UncaughtExceptionHandler {
+  public class CustomizedExceptionHandler implements Thread.UncaughtExceptionHandler {
 
-      private Thread.UncaughtExceptionHandler defaultUEH;
-      private String localPath;
-      public CustomizedExceptionHandler(String localPath) {
-        this.localPath = localPath;
-        //Getting the the default exception handler
-        //that's executed when uncaught exception terminates a thread
-        this.defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
+    private Thread.UncaughtExceptionHandler defaultUEH;
+    private String localPath;
+    public CustomizedExceptionHandler(String localPath) {
+      this.localPath = localPath;
+      //Getting the the default exception handler
+      //that's executed when uncaught exception terminates a thread
+      this.defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
+    }
+
+    public void uncaughtException(Thread t, Throwable e) {
+
+      //Write a printable representation of this Throwable
+      //The StringWriter gives the lock used to synchronize access to this writer.
+      final Writer stringBuffSync = new StringWriter();
+      final PrintWriter printWriter = new PrintWriter(stringBuffSync);
+      e.printStackTrace(printWriter);
+      String stacktrace = stringBuffSync.toString();
+      printWriter.close();
+
+      if (localPath != null) {
+        writeToFile(stacktrace);
       }
-
-      public void uncaughtException(Thread t, Throwable e) {
-
-        //Write a printable representation of this Throwable
-        //The StringWriter gives the lock used to synchronize access to this writer.
-        final Writer stringBuffSync = new StringWriter();
-        final PrintWriter printWriter = new PrintWriter(stringBuffSync);
-        e.printStackTrace(printWriter);
-        String stacktrace = stringBuffSync.toString();
-        printWriter.close();
-
-        if (localPath != null) {
-          writeToFile(stacktrace);
-        }
 
 //Used only to prevent from any code getting executed.
-        // Not needed in this example
-        defaultUEH.uncaughtException(t, e);
-      }
-
-      private void writeToFile(String currentStacktrace) {
-        try {
-
-          //Gets the Android external storage directory & Create new folder Crash_Reports
-          File dir = new File(Environment.getExternalStorageDirectory(),
-                  "Crash_Reports");
-          if (!dir.exists()) {
-            dir.mkdirs();
-          }
-
-          SimpleDateFormat dateFormat = new SimpleDateFormat(
-                  "yyyy_MM_dd_HH_mm_ss");
-          Date date = new Date();
-          String filename = dateFormat.format(date) + ".STACKTRACE";
-
-          // Write the file into the folder
-          File reportFile = new File(dir, filename);
-          FileWriter fileWriter = new FileWriter(reportFile);
-          fileWriter.append(currentStacktrace);
-          fileWriter.flush();
-          fileWriter.close();
-        } catch (Exception e) {
-          Log.e("ExceptionHandler", e.getMessage());
-        }
-      }
-
+      // Not needed in this example
+      defaultUEH.uncaughtException(t, e);
     }
+
+    private void writeToFile(String currentStacktrace) {
+      try {
+
+        //Gets the Android external storage directory & Create new folder Crash_Reports
+        File dir = new File(Environment.getExternalStorageDirectory(),
+                "Crash_Reports");
+        if (!dir.exists()) {
+          dir.mkdirs();
+        }
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "yyyy_MM_dd_HH_mm_ss");
+        Date date = new Date();
+        String filename = dateFormat.format(date) + ".STACKTRACE";
+
+        // Write the file into the folder
+        File reportFile = new File(dir, filename);
+        FileWriter fileWriter = new FileWriter(reportFile);
+        fileWriter.append(currentStacktrace);
+        fileWriter.flush();
+        fileWriter.close();
+      } catch (Exception e) {
+        Log.e("ExceptionHandler", e.getMessage());
+      }
+    }
+
+  }
 
   protected boolean serviceShouldUnbind = false;
   protected ServiceConnection connection = new ServiceConnection() {
@@ -402,7 +402,7 @@ public class FtcRobotControllerActivity extends Activity
         });
         popupMenu.inflate(R.menu.ftc_robot_controller);
         AnnotatedHooksClassFilter.getInstance().callOnCreateMenuMethods(
-            FtcRobotControllerActivity.this, popupMenu.getMenu());
+                FtcRobotControllerActivity.this, popupMenu.getMenu());
         popupMenu.show();
       }
     });
@@ -648,7 +648,7 @@ public class FtcRobotControllerActivity extends Activity
       startActivityForResult(intentConfigure, RequestCode.CONFIGURE_ROBOT_CONTROLLER.ordinal());
     }
     else if (id == R.id.action_settings) {
-	  // historical: this once erroneously used FTC_CONFIGURE_REQUEST_CODE_ROBOT_CONTROLLER
+      // historical: this once erroneously used FTC_CONFIGURE_REQUEST_CODE_ROBOT_CONTROLLER
       Intent settingsIntent = new Intent(AppUtil.getDefContext(), FtcRobotControllerSettingsActivity.class);
       startActivityForResult(settingsIntent, RequestCode.SETTINGS_ROBOT_CONTROLLER.ordinal());
       return true;
@@ -684,7 +684,7 @@ public class FtcRobotControllerActivity extends Activity
       return true;
     }
 
-   return super.onOptionsItemSelected(item);
+    return super.onOptionsItemSelected(item);
   }
 
   @Override
@@ -762,7 +762,7 @@ public class FtcRobotControllerActivity extends Activity
     });
 
     AnnotatedHooksClassFilter.getInstance().callWebHandlerRegistrarMethods(this,
-        service.getWebServer().getWebHandlerManager());
+            service.getWebServer().getWebHandlerManager());
   }
 
   private void updateUIAndRequestRobotSetup() {
@@ -771,12 +771,12 @@ public class FtcRobotControllerActivity extends Activity
       callback.updateRobotStatus(controllerService.getRobotStatus());
       // Only show this first-time toast on headless systems: what we have now on non-headless suffices
       requestRobotSetup(LynxConstants.isRevControlHub()
-        ? new Runnable() {
-            @Override public void run() {
-              showRestartRobotCompleteToast(R.string.toastRobotSetupComplete);
-            }
-          }
-        : null);
+              ? new Runnable() {
+        @Override public void run() {
+          showRestartRobotCompleteToast(R.string.toastRobotSetupComplete);
+        }
+      }
+              : null);
     }
   }
 
@@ -828,8 +828,8 @@ public class FtcRobotControllerActivity extends Activity
     requestRobotSetup(new Runnable() {
       @Override public void run() {
         showRestartRobotCompleteToast(R.string.toastRestartRobotComplete);
-        }
-      });
+      }
+    });
   }
 
   private void showRestartRobotCompleteToast(@StringRes int resid) {

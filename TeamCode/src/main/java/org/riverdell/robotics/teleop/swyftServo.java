@@ -113,8 +113,8 @@ public class swyftServo extends LinearOpMode {
                 liftLeft.setPower(1.0);
             } else if (gamepad1.left_bumper && liftRightPosition > 70 && liftLeftPosition > 70) {
                 // Lower elevator
-                liftRight.setPower(-0.9);
-                liftLeft.setPower(-0.9);
+                liftRight.setPower(-1);
+                liftLeft.setPower(-1);
             } else {
                 liftRight.setPower(0);
                 liftLeft.setPower(0);
@@ -232,9 +232,9 @@ public class swyftServo extends LinearOpMode {
             telemetry.update();
         }
 
-        // Set right and left servo positions to 0.5
-        pivotRight.setPosition(0.20);
-        pivotLeft.setPosition(0.80);
+        // Set right and left servo positions a little higher than hover to move back from submersible
+        pivotRight.setPosition(0.35);
+        pivotLeft.setPosition(0.65);
         claw.setPosition(0);
     }
 }
