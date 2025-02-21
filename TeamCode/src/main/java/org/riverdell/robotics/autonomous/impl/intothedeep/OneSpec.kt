@@ -40,7 +40,7 @@ class OneSpec : HypnoticAuto({ robot ->
 
         navigateTo(Pose(-56.9, -56.2, 0.degrees))
 
-        navigateTo(Pose(-64.3, -66.1, 0.degrees)) //Diagonal Right
+        navigateTo(Pose(-64.3, -62.1, 0.degrees)) //Diagonal Right
 
         navigateTo(Pose(-63.3, -25.4, 0.degrees)) //All the way back and park
 
