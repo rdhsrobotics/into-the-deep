@@ -4,18 +4,18 @@ repositories {
     mavenLocal()
     maven { url = 'https://maven.brott.dev/' }
     maven { url = 'https://www.matthewo.tech/maven/' }
-    maven { url = "https://repo.liftgate.io/artifactory/liftgate-robotics" }
+    maven { url = "https://artifactory.scala.gg/artifactory/opensource" }
 }
 
 dependencies {
-    implementation 'org.firstinspires.ftc:Inspection:10.1.0'
-    implementation 'org.firstinspires.ftc:Blocks:10.1.0'
-    implementation 'org.firstinspires.ftc:RobotCore:10.1.0'
-    implementation 'org.firstinspires.ftc:RobotServer:10.1.0'
-    implementation 'org.firstinspires.ftc:OnBotJava:10.1.0'
-    implementation 'org.firstinspires.ftc:Hardware:10.1.0'
-    implementation 'org.firstinspires.ftc:FtcCommon:10.1.0'
-    implementation 'org.firstinspires.ftc:Vision:10.1.0'
+    implementation 'org.firstinspires.ftc:Inspection:10.2.0'
+    implementation 'org.firstinspires.ftc:Blocks:10.2.0'
+    implementation 'org.firstinspires.ftc:RobotCore:10.2.0'
+    implementation 'org.firstinspires.ftc:RobotServer:10.2.0'
+    implementation 'org.firstinspires.ftc:OnBotJava:10.2.0'
+    implementation 'org.firstinspires.ftc:Hardware:10.2.0'
+    implementation 'org.firstinspires.ftc:FtcCommon:10.2.0'
+    implementation 'org.firstinspires.ftc:Vision:10.2.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.multidex:multidex:2.0.1'  //with androidx libraries
 }

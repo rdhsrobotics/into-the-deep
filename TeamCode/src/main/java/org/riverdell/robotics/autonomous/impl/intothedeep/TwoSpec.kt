@@ -24,27 +24,27 @@ class TwoSpec : HypnoticAuto({ robot ->
         //robot.robot.outtake.setClawState(ClawState.Closed)
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.rest)
 
-        navigateTo(Pose(-36.6, -28.8, 0.degrees))
+        navigateTo(Pose(-36.6, -28.8, 0.degrees))//main start
 
-        navigateTo(Pose(-38.0, -49.0, 0.degrees))
+        navigateTo(Pose(-38.0, -49.0, 0.degrees))//up a little
 
-        navigateTo(Pose(-44.0, -51.65, 0.degrees))
+        navigateTo(Pose(-44.0, -51.65, 0.degrees))//diagonal right
 
-        navigateTo(Pose(-45.6, -15.72, 0.degrees))
+        navigateTo(Pose(-45.6, -15.72, 0.degrees))//push back
 
-        navigateTo(Pose(-44.0, -51.65, 0.degrees))
+        navigateTo(Pose(-44.0, -51.65, 0.degrees))//up a little
 
-        navigateTo(Pose(-54.37, -54.0, 0.degrees))
+        navigateTo(Pose(-54.37, -54.0, 0.degrees))//diagonal right
 
-        navigateTo(Pose(-55.8, -17.5, 0.degrees))
+        navigateTo(Pose(-55.8, -17.5, 0.degrees))//push back
 
-        navigateTo(Pose(-56.9, -56.2, 0.degrees))
+//        navigateTo(Pose(-56.9, -56.2, 0.degrees))//Up front
 
-        navigateTo(Pose(-64.3, -66.1, 0.degrees)) //Diagonal Right
+//        navigateTo(Pose(-64.3, -66.1, 0.degrees)) //Diagonal Right
 
-        navigateTo(Pose(-63.3, -25.4, 0.degrees)) //All the way back and park
+//        navigateTo(Pose(-63.3, -25.4, 0.degrees)) //All the way back and park
 
-        navigateTo(Pose(-63.3, -45.4, 0.degrees))
+        navigateTo(Pose(-55.3, -45.4, 0.degrees))
 
         navigateTo(Pose(-23.3, -17.0, 0.degrees))
 

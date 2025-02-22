@@ -25,10 +25,16 @@ android {
 
 apply from: '../build.dependencies.gradle'
 
+repositories {
+    maven {
+        url "https://artifactory.scala.gg/artifactory/opensource"
+    }
+}
+
 dependencies {
     api "io.liftgate.robotics:ftc-monolib:8.2-R2"
     api 'org.ftclib.ftclib:core:2.1.1'
-//    api 'org.team11260:fast-load:0.1.2'
+    api 'org.team11260:fast-load:0.1.2'
 
     api "org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.2" // Kaml will supply the implementation, we just need Core.
     api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2"
@@ -37,4 +43,3 @@ dependencies {
     api 'com.acmerobotics.roadrunner:core:0.5.5'
     api "com.acmerobotics.dashboard:dashboard:0.4.14"
 }
-
