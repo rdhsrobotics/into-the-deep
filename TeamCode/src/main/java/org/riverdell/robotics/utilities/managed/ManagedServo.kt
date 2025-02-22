@@ -18,7 +18,7 @@ class ManagedServo(
     private val id: String,
     private val servo: ServoImplEx,
     stateHolder: StateHolder,
-    private val constraints: () -> ProfileConstraints
+    var constraints: ProfileConstraints
 ) {
     private var motionProfile: AsymmetricMotionProfile? = null
     private var timer = ElapsedTime()
@@ -33,7 +33,7 @@ class ManagedServo(
             motionProfile = AsymmetricMotionProfile(
                 servo.position,
                 it,
-                constraints()
+                constraints
             )
         } else
         {

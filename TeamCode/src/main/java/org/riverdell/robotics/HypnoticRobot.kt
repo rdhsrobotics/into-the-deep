@@ -26,8 +26,9 @@ abstract class HypnoticRobot(val opMode: HypnoticOpMode) : System
     {
         @JvmStatic
         lateinit var instance: HypnoticRobot
+        @JvmStatic
+        val pwmResolution = 1.0 / 128
 
-        var safeMode = false
         var resetMode = false
     }
 

@@ -8,8 +8,16 @@ import org.riverdell.robotics.autonomous.movement.degrees
 import org.riverdell.robotics.autonomous.movement.navigateTo
 
 @Autonomous(name = "Test | Movement", group = "Test")
-class TestMoveBackwards : HypnoticAuto({ opMode ->
+class TestMovement : HypnoticAuto({ opMode ->
     single("go to position") {
-        navigateTo(Pose(TestConfig.x, TestConfig.y, TestConfig.turn.degrees)) {withAutomaticDeath(TestConfig.automaticDeath)}
+        val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
+        visionPipeline.pause()
+
+        navigateTo(Pose(TestConfig.x, TestConfig.y, TestConfig.turn.degrees)) {
+            withAutomaticDeath(
+                TestConfig.automaticDeath
+            )
+            withExtendoOut(TestConfig.extendoOut)
+        }
     }
 })

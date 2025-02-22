@@ -11,15 +11,10 @@ class DoNothing : HypnoticAuto({ opMode ->
     single("do nothing") {
         val targetPose = Pose()
         val positionChangeAction = PositionChangeAction(targetPose, this.parent)
-        var robotPose: Pose
-        while (true) {
-            if (instance.isStopRequested) {
-                this.parent.terminateMidExecution()
-            }
-
-            robotPose = instance.robot.drivetrain.localizer.pose
-
-            positionChangeAction.getPowers(robotPose, targetPose, Pose())
+        if (instance.isStopRequested) {
+            this.parent.terminateMidExecution()
         }
+
+        positionChangeAction.executeBlocking(true)
     }
 })

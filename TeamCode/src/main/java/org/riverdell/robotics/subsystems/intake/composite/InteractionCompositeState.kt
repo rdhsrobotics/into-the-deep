@@ -8,6 +8,7 @@ enum class InteractionCompositeState
     WallIntakeViaOuttake,
     OuttakeReady,
     Outtaking,
+    SpecimenReady,
     InProgress
 
 }

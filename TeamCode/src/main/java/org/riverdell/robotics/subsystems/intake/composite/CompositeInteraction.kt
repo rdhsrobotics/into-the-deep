@@ -5,14 +5,16 @@ import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
+import org.riverdell.robotics.utilities.motionprofile.Constraint
 import java.util.concurrent.CompletableFuture
 
 class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem() {
     var state = InteractionCompositeState.Rest
     var attemptedState: InteractionCompositeState? = null
     var attemptTime = System.currentTimeMillis()
-    var outtakeLevel = OuttakeLevel.Bar1
+    var outtakeLevel = OuttakeLevel.Bar2
     var lastOuttakeBegin = System.currentTimeMillis()
+    var shouldAutoGuide = false
 
     fun outtakeNext(): CompletableFuture<*> {
         if (state != InteractionCompositeState.Outtaking) {
@@ -52,32 +54,45 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             .exceptionally { return@exceptionally null }
     }
 
-    fun initialOuttakeFromRest(preferredLevel: OuttakeLevel = OuttakeLevel.Bar1) =
-        stateMachineRestrict(
-            InteractionCompositeState.Rest,
-            InteractionCompositeState.Outtaking,
-            ignoreInProgress = robot !is HypnoticAuto.HypnoticAutoRobot
-        ) {
-            outtakeLevel = preferredLevel
-            robot.outtake.depositRotation()
-            robot.outtake.depositCoaxial()
-
-            CompletableFuture.allOf(
-                robot.lift.extendToAndStayAt(outtakeLevel.encoderLevel)
-            )
-        }
-
-    fun initialOuttake(preferredLevel: OuttakeLevel = OuttakeLevel.HighBasket) = stateMachineRestrict(
-        InteractionCompositeState.OuttakeReady,
+    fun initialOuttakeFromRest(
+        preferredLevel: OuttakeLevel = OuttakeLevel.Bar2,
+        shouldEnterPreDepositIfAvailable: Boolean = true
+    ) = stateMachineRestrict(
+        InteractionCompositeState.Rest,
         InteractionCompositeState.Outtaking,
         ignoreInProgress = robot !is HypnoticAuto.HypnoticAutoRobot
     ) {
         outtakeLevel = preferredLevel
-        lastOuttakeBegin = System.currentTimeMillis()
+
+        if (robot !is HypnoticAuto.HypnoticAutoRobot) {
+            robot.outtake.depositRotation()
+        } else {
+            if (shouldEnterPreDepositIfAvailable) {
+                robot.outtake.autoPreDepositRotation()
+            } else {
+                robot.outtake.depositRotation()
+            }
+        }
+
+        robot.outtake.depositCoaxial()
+
         CompletableFuture.allOf(
             robot.lift.extendToAndStayAt(outtakeLevel.encoderLevel)
         )
     }
+
+    fun initialOuttake(preferredLevel: OuttakeLevel = OuttakeLevel.HighBasket) =
+        stateMachineRestrict(
+            InteractionCompositeState.OuttakeReady,
+            InteractionCompositeState.Outtaking,
+            ignoreInProgress = robot !is HypnoticAuto.HypnoticAutoRobot
+        ) {
+            outtakeLevel = preferredLevel
+            lastOuttakeBegin = System.currentTimeMillis()
+            CompletableFuture.allOf(
+                robot.lift.extendToAndStayAt(outtakeLevel.encoderLevel)
+            )
+        }
 
     fun outtakeCompleteAndRestFromOuttakeReady() = stateMachineRestrict(
         InteractionCompositeState.OuttakeReady,
@@ -99,8 +114,18 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         ignoreInProgress = true
     ) {
         CompletableFuture.runAsync {
+            if (robot is HypnoticAuto.HypnoticAutoRobot) {
+                robot.outtake.depositRotation()
+                Thread.sleep(200L)
+            }
+
             outtake.openClaw()
-            Thread.sleep(125L)
+
+            if (robot is HypnoticAuto.HypnoticAutoRobot) {
+                Thread.sleep(250L)
+            } else {
+                Thread.sleep(300L)
+            }
 
             outtake.readyRotation()
             outtake.readyCoaxial().join()
@@ -111,22 +136,35 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     }
 
     fun specimenCompleteAndRest() = stateMachineRestrict(
-        InteractionCompositeState.OuttakeReady,
+        InteractionCompositeState.SpecimenReady,
         InteractionCompositeState.Rest,
-        ignoreInProgress = true
     ) {
         CompletableFuture.runAsync {
-            lift.extendToAndStayAt(1000)
-            Thread.sleep(750L)
-            outtake.openClaw()
-            Thread.sleep(125L)
-
             lift.extendToAndStayAt(0)
+            Thread.sleep(500L)
+            outtake.openClaw()
+            Thread.sleep(200L)
 
             outtake.readyRotation()
             outtake.readyCoaxial()
 
             CompletableFuture.completedFuture(null)
+        }
+    }
+
+    fun returnToRestNormal() = stateMachineRestrict(
+        InteractionCompositeState.OuttakeReady,
+        InteractionCompositeState.Rest,
+    ) {
+        outtake.openClaw()
+
+        CompletableFuture.runAsync {
+            lift.extendToAndStayAt(0)
+            outtake.readyRotation()
+            outtake.readyCoaxial()
+            CompletableFuture.completedFuture(null)
+        }.thenRunAsync {
+            outtake.closeClaw()
         }
     }
 
@@ -152,30 +190,32 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         )
     }
 
-    fun wallOuttakeToOuttakeReady() =
+    fun wallOuttakeToSpecimenReady() =
         stateMachineRestrict(
             InteractionCompositeState.WallIntakeViaOuttake,
             InteractionCompositeState.OuttakeReady
         ) {
             CompletableFuture.allOf(
                 robot.outtake.closeClaw(),
-                robot.outtake.depositCoaxial(),
-                robot.outtake.depositRotation()
-            )
+                robot.outtake.specimenCoaxial(),
+                robot.outtake.specimenRotation()
+            ).thenRunAsync {
+                extension.extendToAndStayAt(150)
+            }
         }
 
     fun prepareForPickup(
         wristState: WristState = WristState.Lateral,
         doNotUseAutoMode: Boolean = false,
-        wideOpen: Boolean = false
+        wideOpen: Boolean = false,
+        submersibleOverride: Int? = null,
     ) =
         stateMachineRestrict(InteractionCompositeState.Rest, InteractionCompositeState.Pickup) {
             intakeV4B.v4bUnlock()
                 .thenAcceptAsync {
-                    extension.extendToAndStayAt(IntakeConfig.MAX_EXTENSION)
+                    extension.extendToAndStayAt(submersibleOverride ?: IntakeConfig.MAX_EXTENSION)
                         .thenAccept {
-                            if (robot !is HypnoticAuto.HypnoticAutoRobot)
-                            {
+                            if (robot !is HypnoticAuto.HypnoticAutoRobot) {
                                 extension.slides.idle()
                             }
                         }
@@ -195,21 +235,40 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
                 }
         }
 
-    fun intakeAndConfirm(extras: () -> Unit = {}) =
+    fun intakeAndConfirm(
+        slowMode: Boolean = false,
+        noPick: Boolean = false,
+        extras: () -> Unit = {}
+    ) =
         stateMachineRestrict(InteractionCompositeState.Pickup, InteractionCompositeState.Confirm) {
-            intakeV4B.v4bSamplePickup().thenRunAsync {
-                Thread.sleep(125L)
-                intake.closeIntake()
-                Thread.sleep(125L)
-
-                extras()
-
-                CompletableFuture.allOf(
-                    intakeV4B.v4bIntermediate(),
-                    intakeV4B.coaxialIntermediate(),
-                    intake.setWrist(WristState.Lateral)
-                ).join()
+            if (slowMode) {
+                opMode.robot.intakeV4B.leftRotation.constraints = Constraint.HALF.scale(5.5)
+                opMode.robot.intakeV4B.rightRotation.constraints = Constraint.HALF.scale(5.5)
             }
+
+            (if (!noPick) intakeV4B.v4bSamplePickup() else CompletableFuture.completedFuture(null))
+                .thenRunAsync {
+                    if (!noPick) {
+                        Thread.sleep(125L)
+                        intake.closeIntake()
+                        Thread.sleep(125L)
+
+                        extras()
+                    }
+
+                    if (slowMode) {
+                        opMode.robot.intakeV4B.leftRotation.constraints =
+                            Constraint.HALF.scale(30.5)
+                        opMode.robot.intakeV4B.rightRotation.constraints =
+                            Constraint.HALF.scale(30.5)
+                    }
+
+                    CompletableFuture.allOf(
+                        intakeV4B.v4bIntermediate(),
+                        intakeV4B.coaxialIntermediate(),
+                        intake.setWrist(WristState.Lateral)
+                    ).join()
+                }
         }
 
     fun declineAndIntake() =
@@ -232,13 +291,16 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
 
         Thread.sleep(100)
         CompletableFuture.allOf(
-            intake.openIntake(),
-            outtake.closeClaw()
+            intake.openIntake(true),
         )
+
+        Thread.sleep(80)
+        outtake.closeClaw()
         Thread.sleep(50)
 
         CompletableFuture.allOf(
-            outtake.depositRotation()
+            (if (robot is HypnoticAuto.HypnoticAutoRobot)
+                outtake.autoPreDepositRotation() else outtake.depositRotation())
                 .thenRunAsync {
                     intake.closeIntake()
                 },
@@ -270,6 +332,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
                 },
                 intakeV4B.v4bUnlock()
             ).thenRunAsync {
+                outtake.openClaw()
                 intakeV4B.v4bLock().join()
                 performTransferSequence()
                 extension.slides.idle()
@@ -310,13 +373,13 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     override fun start() {
     }
 
-    fun waitForState(state: InteractionCompositeState,
-                     timeout: Long = 10000L): Boolean {
+    fun waitForState(
+        state: InteractionCompositeState,
+        timeout: Long = 10000L
+    ): Boolean {
         val start = System.currentTimeMillis()
-        while (this.state != state)
-        {
-            if (System.currentTimeMillis() - start > timeout)
-            {
+        while (this.state != state) {
+            if (System.currentTimeMillis() - start > timeout) {
                 return false
             }
             Thread.sleep(50L)

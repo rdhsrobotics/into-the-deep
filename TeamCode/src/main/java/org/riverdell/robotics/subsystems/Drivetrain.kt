@@ -11,6 +11,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles
 import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.autonomous.movement.localization.TwoWheelLocalizer
+import java.lang.Math.pow
+import kotlin.math.pow
+import kotlin.math.sign
+import kotlin.math.sqrt
 
 class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
 {
@@ -23,12 +27,19 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
 
     private lateinit var backingDriveBase: MecanumDrive
 
-    fun voltage() = kotlin.runCatching { voltageState.current() }.getOrElse { -1.0 }
+    fun voltage() = kotlin.runCatching { voltageState.current() }.getOrElse { 12.0 }
     fun imu() = robot.imuProxy.alternativeImu()
     //fun alternativeImu() = robot.imuProxy.imu()
 
     fun driveRobotCentric(driverOp: GamepadEx, scaleFactor: Double)
     {
+/*        backingDriveBase.driveRobotCentric(
+            -sqrt(driverOp.leftX) * scaleFactor,
+            -sqrt(driverOp.leftY) * scaleFactor,
+             -1 * driverOp.rightX.sign * driverOp.rightX.pow(2.0) * scaleFactor,
+            false
+        )*/
+
         backingDriveBase.driveRobotCentric(
             -driverOp.leftX * scaleFactor,
             -driverOp.leftY * scaleFactor,
@@ -72,9 +83,13 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
     fun setupDriveBase()
     {
         val backLeft = Motor(robot.opMode.hardwareMap, "backLeft")
+        backLeft.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE)
         val backRight = Motor(robot.opMode.hardwareMap, "backRight")
+        backRight.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE)
         val frontLeft = Motor(robot.opMode.hardwareMap, "frontLeft")
+        frontLeft.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE)
         val frontRight = Motor(robot.opMode.hardwareMap, "frontRight")
+        frontRight.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE)
 
         backingDriveBase = MecanumDrive(
             frontLeft, frontRight, backLeft, backRight

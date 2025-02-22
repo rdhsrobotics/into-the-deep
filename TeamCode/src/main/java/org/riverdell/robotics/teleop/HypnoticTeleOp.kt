@@ -5,10 +5,9 @@ import io.liftgate.robotics.mono.Mono.commands
 import io.liftgate.robotics.mono.gamepad.ButtonType
 import org.riverdell.robotics.HypnoticOpMode
 import org.riverdell.robotics.HypnoticRobot
-import org.riverdell.robotics.autonomous.detection.SampleType
-import org.riverdell.robotics.autonomous.detection.VisionPipeline
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.intake.composite.IntakeConfig
+import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
@@ -41,6 +40,11 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
 
             multipleTelemetry.addLine("Started!")
             multipleTelemetry.update()
+
+            if (ManagedMotorGroup.keepEncoderPositions)
+            {
+                lift.extendToAndStayAt(0).join()
+            }
 
             var loopTime: Long
             while (teleOp.opModeIsActive()) {
@@ -94,12 +98,12 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     }
                 }
 
-                teleOp.telemetry.addData(
+                multipleTelemetry.addData(
                     "Loop Refresh Rate ",
                     1000000000 / (System.nanoTime() - loopTime).toDouble()
                 )
-                teleOp.telemetry.addEssentialLines()
-                teleOp.telemetry.update()
+                multipleTelemetry.addEssentialLines()
+                multipleTelemetry.update()
             }
         }
 
@@ -166,11 +170,20 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     .whenPressedOnce()
 
                 where(ButtonType.DPadLeft)
+                    .onlyWhen { intakeComposite.state == InteractionCompositeState.SpecimenReady }
+                    .triggers {
+                        lift.extendToAndStayAt(900)
+                    }
+                    .andIsHeldUntilReleasedWhere {
+                        intakeComposite.specimenCompleteAndRest()
+                    }
+
+                where(ButtonType.DPadLeft)
                     .onlyWhen {
                         intakeComposite.state == InteractionCompositeState.OuttakeReady
                     }
                     .triggers {
-                        intakeComposite.specimenCompleteAndRest()
+                        intakeComposite.returnToRestNormal()
                     }
                     .whenPressedOnce()
 
@@ -203,7 +216,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                         if (intakeComposite.state == InteractionCompositeState.Rest) {
                             intakeComposite.wallOuttakeFromRest()
                         } else if (intakeComposite.state == InteractionCompositeState.WallIntakeViaOuttake) {
-                            intakeComposite.wallOuttakeToOuttakeReady()
+                            intakeComposite.wallOuttakeToSpecimenReady()
                         }
                     }
                     .whenPressedOnce()

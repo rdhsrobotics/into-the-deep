@@ -2,6 +2,8 @@ package org.riverdell.robotics.subsystems.intake.v4b
 
 enum class V4BState(val position: Double)
 {
+    //            left.position = 1.0
+    //            right.position = 0.0
     Lock(0.21),
     UnlockedIdleHover(0.3),
     Transfer(0.23),

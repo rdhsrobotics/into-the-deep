@@ -11,5 +11,6 @@ fun StateHolder.motionProfiledServo(
 ) = ManagedServo(
     id,
     servo,
-    this
-) { constraints }
+    this,
+    constraints
+)

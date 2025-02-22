@@ -1,20 +1,13 @@
-package org.riverdell.robotics.autonomous.impl.intothedeep
+package org.riverdell.robotics.autonomous.impl.intothedeep.incbuator
 
-import com.acmerobotics.roadrunner.geometry.Pose2d
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
-import io.liftgate.robotics.mono.pipeline.ExecutionGroup
-import io.liftgate.robotics.mono.pipeline.simultaneous
 import io.liftgate.robotics.mono.pipeline.single
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.autonomous.movement.degrees
-import org.riverdell.robotics.autonomous.movement.geometry.Point
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
 import org.riverdell.robotics.autonomous.movement.navigateTo
-import org.riverdell.robotics.autonomous.movement.purePursuitNavigateTo
 import org.riverdell.robotics.autonomous.movement.purepursuit.FieldWaypoint
 import org.riverdell.robotics.subsystems.intake.WristState
-import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
-import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 
 @Autonomous(name = "5 Specimen", group = "Test")
 class `5Spec` : HypnoticAuto({ opMode ->

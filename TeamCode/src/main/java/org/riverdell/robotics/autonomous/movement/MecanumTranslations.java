@@ -15,7 +15,7 @@ public class MecanumTranslations {
 
     public static FrictionCompensationFunctionParameters STRAIGHT = new FrictionCompensationFunctionParameters(1.33, 0.068, 0.2, 3.45);
     public static FrictionCompensationFunctionParameters STRAFE = new FrictionCompensationFunctionParameters(1.33, 0.068, 0.15, 3.45);
-    public static FrictionCompensationFunctionParameters TURN = new FrictionCompensationFunctionParameters(0.83, 0.01, 0.3, 100.0);
+    public static FrictionCompensationFunctionParameters TURN = new FrictionCompensationFunctionParameters(1.46, 0.055, 0.3, 1.0);
 
     private static double frictionCompensationFunction(FrictionCompensationFunctionParameters parameters, double v) {
         return -parameters.m * Math.signum(v) * (1 / (parameters.a * parameters.sharpness * Math.pow(v, 4) + 1) + (parameters.F_d * parameters.sharpness * Math.pow(v, 2) - 1) / (parameters.sharpness * Math.pow(v, 2) + 1));

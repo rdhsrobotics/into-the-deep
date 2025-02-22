@@ -8,4 +8,5 @@ public class TestConfig {
     public static double y = 0;
     public static double turn = 90;
     public static double automaticDeath = 50000;
+    public static boolean extendoOut = false;
 }

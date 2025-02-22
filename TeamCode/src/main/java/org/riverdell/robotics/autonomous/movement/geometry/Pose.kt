@@ -37,6 +37,14 @@ class Pose : Point
         heading = other.heading
     }
 
+    fun setX(new: Double) {
+        x = new
+    }
+
+    fun setY(new: Double) {
+        y = new
+    }
+
     fun add(other: Pose): Pose
     {
         return Pose(x + other.x, y + other.y, heading + other.heading)
@@ -45,6 +53,11 @@ class Pose : Point
     fun add(other: Vector2D): Pose
     {
         return Pose(x + other.x, y + other.y, heading + other.heading)
+    }
+
+    fun add(other: com.acmerobotics.roadrunner.geometry.Vector2d): Pose
+    {
+        return Pose(x + other.x, y + other.y, heading)
     }
 
     fun addOnlyTranslational(other: com.acmerobotics.roadrunner.geometry.Vector2d): Pose
@@ -60,6 +73,10 @@ class Pose : Point
     fun divide(other: Pose): Pose
     {
         return Pose(x / other.x, y / other.y, heading / other.heading)
+    }
+
+    override fun divide(div: Double): Pose {
+        return  Pose(x / div, y / div, heading / div)
     }
 
     fun subt(other: Pose): Pose

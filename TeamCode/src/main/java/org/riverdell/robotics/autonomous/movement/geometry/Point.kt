@@ -32,7 +32,7 @@ open class Point @JvmOverloads constructor(
         return Point(x - other.x, y - other.y)
     }
 
-    fun divide(div: Double): Point
+    open fun divide(div: Double): Point
     {
         return Point(x / div, y / div)
     }

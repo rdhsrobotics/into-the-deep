@@ -54,16 +54,16 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
             hub.bulkCachingMode = LynxModule.BulkCachingMode.AUTO
         }
 
-        imu = opMode.hardwareMap["imu"] as IMU //TODO Figure out which IMU is "lol" and "imu"
-        imu.initialize(
-            IMU.Parameters(
-                RevHubOrientationOnRobot(
-                    RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                    RevHubOrientationOnRobot.UsbFacingDirection.RIGHT
-                )
-            )
-        )
-        imu.resetYaw()
+//        imu = opMode.hardwareMap["imuLol"] as IMU //TODO Figure out which IMU is "lol" and "imu"
+//        imu.initialize(
+//            IMU.Parameters(
+//                RevHubOrientationOnRobot(
+//                    RevHubOrientationOnRobot.LogoFacingDirection.UP,
+//                    RevHubOrientationOnRobot.UsbFacingDirection.RIGHT
+//                )
+//            )
+//        )
+//        imu.resetYaw()
 
         imuLol = opMode.hardwareMap["lol"] as IMU
         imuLol.initialize(
@@ -102,8 +102,8 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
         var start = System.currentTimeMillis()
         if (HypnoticRobot.resetMode) {
             while (liftMotorLeft.velocity.absoluteValue > 0.1 || System.currentTimeMillis() - start < 500L) {
-                liftMotorLeft.power = -0.3
-                liftMotorRight.power = -0.3
+                liftMotorLeft.power = -0.5
+                liftMotorRight.power = -0.5
             }
         }
 

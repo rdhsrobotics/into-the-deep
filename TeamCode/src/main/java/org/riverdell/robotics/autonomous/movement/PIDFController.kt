@@ -1,8 +1,9 @@
 package org.riverdell.robotics.autonomous.movement
 
+import com.acmerobotics.roadrunner.control.PIDCoefficients
 import java.util.LinkedList
 import kotlin.math.abs
-import kotlin.math.min
+import kotlin.math.pow
 
 /**
  * This is a PID controller (https://en.wikipedia.org/wiki/PID_controller)
@@ -21,7 +22,7 @@ class PIDFController @JvmOverloads constructor(
     var p: Double,
     var i: Double,
     var d: Double,
-    var f: (Double, Double) -> Double,
+    var f: (Double, Double, Double) -> Double,
     sp: Double = 0.0,
     pv: Double = 0.0,
     useAverageVelocity: Boolean = true
@@ -52,15 +53,15 @@ class PIDFController @JvmOverloads constructor(
 
     var lastTimeStamp: Double
         private set
-    var period: Double
+    var periodMillis: Double
         private set
     var averageVelocity: Double
-    private val prevVels: LinkedList<DoubleArray>
+    private val prevVels: LinkedList<Pair<Double, Double>>
 
     /**
      * The base constructor for the PIDF controller
      */
-    constructor(kp: Double, ki: Double, kd: Double, kf: (Double, Double) -> Double, useAverageVelocity: Boolean) : this(
+    constructor(kp: Double, ki: Double, kd: Double, kf: (Double, Double, Double) -> Double, useAverageVelocity: Boolean) : this(
         kp,
         ki,
         kd,
@@ -69,6 +70,8 @@ class PIDFController @JvmOverloads constructor(
         0.0,
         useAverageVelocity
     )
+
+    constructor(pidCoefficients: com.qualcomm.robotcore.hardware.PIDCoefficients, kf: (Double, Double, Double) -> Double) : this(pidCoefficients.p, pidCoefficients.i, pidCoefficients.d, kf)
 
     /**
      * This is the full constructor for the PIDF controller. Our PIDF controller
@@ -87,7 +90,7 @@ class PIDFController @JvmOverloads constructor(
         maxIntegral = 1.0
 
         lastTimeStamp = 0.0
-        period = 0.0
+        periodMillis = 0.0
         prevVels = LinkedList()
         averageVelocity = 0.0
         this.useAverageVelocity = useAverageVelocity
@@ -156,7 +159,7 @@ class PIDFController @JvmOverloads constructor(
                 && abs(velocityError) < errorToleranceV)
     }
 
-    val coefficients: Pair<DoubleArray, (Double, Double) -> Double>
+    val coefficients: Pair<DoubleArray, (Double, Double, Double) -> Double>
         /**
          * @return the PIDF coefficients
          */
@@ -184,23 +187,22 @@ class PIDFController @JvmOverloads constructor(
      */
 
     @JvmOverloads
-    fun calculate(pv: Double = measuredValue, sp: Double = setPoint, velocity: Double? = null): Double {
+    fun calculate(pv: Double = measuredValue, sp: Double = setPoint, measuredVelocity: Double? = null): Double {
         if (setPoint != sp) setSetPoint(sp)
-
         prevErrorVal = positionError
 
-        val currentTimeStamp = System.nanoTime().toDouble() / 1E9
+        val currentTimeStamp = System.nanoTime().toDouble()
         if (lastTimeStamp == 0.0) lastTimeStamp = currentTimeStamp
-        period = currentTimeStamp - lastTimeStamp
+        periodMillis = (currentTimeStamp - lastTimeStamp) / 1E6
         lastTimeStamp = currentTimeStamp
 
         measuredValue = pv
         positionError = setPoint - measuredValue
 
-        if (abs(period) > 1E-8) {
-            //stores up to 6 previous values of velocity and its period
-            prevVels.add(doubleArrayOf(velocity ?: ((positionError - prevErrorVal) / period), period))
-            if (prevVels.size > 5) {
+        if (abs(periodMillis) > 0.1) {
+            val velocity = measuredVelocity ?: ((positionError - prevErrorVal) / (periodMillis / 1E3))
+            prevVels.add(Pair(velocity, periodMillis))
+            if (prevVels.size > 15) { //store up to 15 previous values of velocity and its associated period
                 prevVels.pop()
             }
             //quadratic recency biased average: 100 ms outdated is valued 4 times less than current
@@ -209,33 +211,26 @@ class PIDFController @JvmOverloads constructor(
             var denominator = 0.0
             var recencyWeight: Double
             for (i in prevVels.indices) {
-                recencyWeight = 1 / (0.0003 * periodSum * periodSum + 1)
-                sum += prevVels[i][0] * recencyWeight
+                recencyWeight = 1 / (0.0003 * periodSum.pow(2) + 1)
+                sum += prevVels[i].first * recencyWeight
                 denominator += recencyWeight
-                periodSum += prevVels[i][1]
+                periodSum += prevVels[i].second
             }
-            averageVelocity = sum / denominator
-
-            if (useAverageVelocity) {
-                velocityError = averageVelocity
-            } else {
-                if (positionError - prevErrorVal != 0.0) {
-                    velocityError = (positionError - prevErrorVal) / period
-                }
-            }
+            averageVelocity = if (denominator != 0.0) sum / denominator else velocity
+            velocityError = if (useAverageVelocity) averageVelocity else velocity
         }
 
         /* if total error is the integral from 0 to t of e(t')dt', and
         e(t) = sp - pv, then the total error, E(t), equals sp*t - pv*t.
          */
-        totalError += period * (setPoint - measuredValue)
+        totalError += periodMillis * (setPoint - measuredValue)
         totalError = totalError.coerceIn(minIntegral, maxIntegral)
 
         // returns u(t)
-        return p * positionError + i * totalError + d * velocityError + f(0.0, 0.0) //TODO placeholder F
+        return p * positionError + i * totalError + d * velocityError + f(measuredValue, setPoint, velocityError)
     }
 
-    fun setPIDF(kp: Double, ki: Double, kd: Double, kf: (Double, Double) -> Double) {
+    fun setPIDF(kp: Double, ki: Double, kd: Double, kf: (Double, Double, Double) -> Double) {
         p = kp
         i = ki
         d = kd

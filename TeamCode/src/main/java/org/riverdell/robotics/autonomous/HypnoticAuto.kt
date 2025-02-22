@@ -3,221 +3,182 @@ package org.riverdell.robotics.autonomous
 import io.liftgate.robotics.mono.Mono
 import io.liftgate.robotics.mono.pipeline.RootExecutionGroup
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 import org.riverdell.robotics.HypnoticOpMode
 import org.riverdell.robotics.HypnoticRobot
+import org.riverdell.robotics.autonomous.detection.SampleType
 import org.riverdell.robotics.autonomous.detection.VisionPipeline
-import org.riverdell.robotics.autonomous.movement.konfig.NavigationConfig
+import org.riverdell.robotics.autonomous.movement.DrivetrainUpdates
+import org.riverdell.robotics.autonomous.movement.PositionChangeAction
+import org.riverdell.robotics.autonomous.movement.degrees
 import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
+import kotlin.concurrent.withLock
 
 abstract class HypnoticAuto(
-    internal val blockExecutionGroup: RootExecutionGroup.(HypnoticAuto) -> Unit
-) : HypnoticOpMode()
-{
-    companion object
-    {
+    val sampleType: SampleType = SampleType.Red,
+    internal val blockExecutionGroup: RootExecutionGroup.(HypnoticAuto) -> Unit,
+    internal val onInit: (HypnoticAutoRobot) -> Unit = { }
+) : HypnoticOpMode() {
+    constructor(
+        blockExecutionGroup: RootExecutionGroup.(HypnoticAuto) -> Unit,
+        onInit: (HypnoticAutoRobot) -> Unit = { }
+    ) : this(SampleType.Red, blockExecutionGroup, onInit)
+
+    companion object {
         @JvmStatic
         lateinit var instance: HypnoticAuto
+
+        @JvmStatic
+        var nextUpdates: DrivetrainUpdates? = null
+        var previousUpdate: DrivetrainUpdates? = null
+
+        @JvmStatic
+        val updateLock = ReentrantLock()
+
+        @JvmStatic
+        fun sendZeroCommand() {
+            updateLock.withLock {
+                nextUpdates = null
+                previousUpdate = null
+                PositionChangeAction.ZERO.propagate(instance)
+            }
+        }
     }
 
-   inner class HypnoticAutoRobot : HypnoticRobot(this@HypnoticAuto)
-   {
-       val navigationConfig = NavigationConfig()
-       val visionPipeline by lazy { VisionPipeline(this@HypnoticAuto) } // TODO: new season
+    inner class HypnoticAutoRobot : HypnoticRobot(this@HypnoticAuto) {
+        val visionPipeline by lazy { VisionPipeline(this@HypnoticAuto, sampleType) }
 
-       override fun additionalSubSystems() = listOf<AbstractSubsystem>(/*visionPipeline*/)
-       override fun initialize()
-       {
-           HypnoticAuto.instance = this@HypnoticAuto
+        var activeX = -82
+        var activeY = 300
 
-           while (opModeInInit())
-           {
-               runPeriodics()
+        override fun additionalSubSystems() = listOf<AbstractSubsystem>(visionPipeline)
+        override fun initialize() {
+            HypnoticAuto.instance = this@HypnoticAuto
 
-               imuProxy.allPeriodic()
-               drivetrain.localizer.update()
+            nextUpdates = null
+            previousUpdate = null
 
-               multipleTelemetry.addLine("--- Initialization ---")
+            while (opModeInInit()) {
+                runPeriodics()
+                onInit(this)
 
-               multipleTelemetry.addLine("IMU: ${drivetrain.imu().getYaw(AngleUnit.DEGREES)}")
-               //multipleTelemetry.addLine("Normal IMU: ${drivetrain.imu().getYaw(AngleUnit.DEGREES)}")
+                imuProxy.allPeriodic()
+                drivetrain.localizer.update()
 
-               multipleTelemetry.addData(
-                   "Voltage",
-                   drivetrain.voltage()
-               )
-               multipleTelemetry.addData(
-                   "Heading",
-                   drivetrain.imu().getYaw(AngleUnit.DEGREES)
-               )
-               multipleTelemetry.addData(
-                   "X Position Error",
-                   0.0
-               )
-               multipleTelemetry.addData(
-                   "Y Position Error",
-                   0.0
-               )
-               multipleTelemetry.addData(
-                   "Pose",
-                   drivetrain.localizer.pose
-               )
+                multipleTelemetry.addLine("--- Initialization ---")
 
-               multipleTelemetry.addData(
-                   "H Velocity Error",
-                   0.0
-               )
+                multipleTelemetry.addData(
+                    "X Position Error",
+                    0.0
+                )
+                multipleTelemetry.addData(
+                    "X Velocity Error",
+                    0.0
+                )
+                multipleTelemetry.addData(
+                    "Y Position Error",
+                    0.0
+                )
+                multipleTelemetry.addData(
+                    "Y Velocity Error",
+                    0.0
+                )
+                multipleTelemetry.addData(
+                    "Heading",
+                    Math.toDegrees(robot.imuProxy.alternativeImu().yaw.degrees)
+                )
+                multipleTelemetry.addData(
+                    "Something like that",
+                    robot.drivetrain.localizer.pose
+                )
+                multipleTelemetry.addData(
+                    "Heading Velocity Error",
+                    0.0
+                )
+                multipleTelemetry.addData(
+                    "Period Milliseconds",
+                    0.0
+                )
+                multipleTelemetry.addData(
+                    "IMU Latency ms",
+                    (System.nanoTime() - robot.drivetrain.imu().acquisitionTime) / 1E6
+                )
+                multipleTelemetry.update()
+            }
+        }
 
-               multipleTelemetry.addData(
-                   "X Velocity Error",
-                   0.0
-               )
+        override fun opModeStart() {
+            thread { // IMU thread
+                while (!isStopRequested) {
+                    imuProxy.allPeriodic()
+                }
+            }
 
+            thread {
+                while (!isStopRequested) { // localizer thread
+                    drivetrain.localizer.update()
+                }
+            }
 
-               multipleTelemetry.addData(
-                   "Y Velocity Error",
-                   0.0
-               )
+            thread { // motor power setter thread
+                while (!isStopRequested) {
+                    updateLock.withLock {
+                        if (nextUpdates != null) {
+                            if (previousUpdate != null) {
+                                if (!previousUpdate!!.equalsUpdate(nextUpdates!!)) {
+                                    nextUpdates!!.propagate(this@HypnoticAuto)
+                                }
+                            } else {
+                                nextUpdates!!.propagate(this@HypnoticAuto)
+                            }
+                            previousUpdate = nextUpdates
+                        }
+                    }
+                }
+            }
 
-               multipleTelemetry.addData(
-                   "Period",
-                   0.0
-               )
-               multipleTelemetry.addData(
-                   "IMU Latency",
-                   (System.nanoTime() - imuProxy.alternativeImu().acquisitionTime)/1E6
-               )
-               multipleTelemetry.update()
-           }
-       }
+            thread { // subsystems thread
+                while (!isStopRequested) {
+                    kotlin.runCatching {
+                        runPeriodics()
+                    }.onFailure {
+                        it.printStackTrace()
+                    }
+                }
+            }
 
-       override fun opModeStart()
-       {
-           thread {
-               while (!isStopRequested)
-               {
-                   //imuProxy.allPeriodic()
-                   //drivetrain.localizer.update()
-               }
-           }
+            val executionGroup = Mono.buildExecutionGroup {
+                blockExecutionGroup(
+                    this@HypnoticAuto
+                )
+            }
 
-           thread {
-               while (!isStopRequested)
-               {
-//                   multipleTelemetry.addLine("Alternative IMU: ${drivetrain.alternativeImu().getYaw(AngleUnit.DEGREES)}")
-//                   multipleTelemetry.addLine("Normal IMU: ${drivetrain.imu().getYaw(AngleUnit.DEGREES)}")
-//
-//                   multipleTelemetry.addData(
-//                       "Pose",
-//                       "Pose(${
-//                           "%.2f".format(drivetrain.localizer.pose.x.toFloat())
-//                       }, ${
-//                           "%.2f".format(drivetrain.localizer.pose.y.toFloat())
-//                       }, (${
-//                           "%.2f".format(drivetrain.imu().getYaw(AngleUnit.DEGREES).toFloat())
-//                       }).degrees)"
-//                   )
-//
-//                   multipleTelemetry.update()
-               }
-           }
+            var operatingThreadFinishedProperly = false
+            val operatingThread = thread {
+                runCatching {
+                    executionGroup.executeBlocking()
+                }.onFailure {
+                    it.printStackTrace()
+                }
 
-           thread {
-               while (!isStopRequested)
-               {
-                   kotlin.runCatching {
-                       runPeriodics()
-                   }.onFailure {
-                       it.printStackTrace()
-                   }
-                   /*
-*//*
-                   if (intakeComposite.state == InteractionCompositeState.InProgress) {
-                       val timeInProgress = System.currentTimeMillis() - intakeComposite.attemptTime
-                       if (timeInProgress > 7500L) {
-                           if (intakeComposite.attemptedState != null) {
-                               intakeComposite.state = intakeComposite.attemptedState!!
-                               intakeComposite.attemptTime = System.currentTimeMillis()
-                               intakeComposite.attemptedState = null
-                           }
-                       }
-                   }*//*
+                operatingThreadFinishedProperly = true
+            }
 
-                   multipleTelemetry.addLine("--- Autonomous ---")
-                   multipleTelemetry.addData(
-                       "Voltage",
-                       drivetrain.voltage()
-                   )
-                   multipleTelemetry.addData(
-                       "IMU",
-                       drivetrain.imu().getYaw(AngleUnit.DEGREES)
-                   )
+            while (opModeIsActive()) {
+                if (operatingThreadFinishedProperly) {
+                    ManagedMotorGroup.keepEncoderPositions = true
+                    break
+                }
 
+                Thread.sleep(50L)
+            }
 
-//                   multipleTelemetry.addData(
-//                       "H Velocity Error",
-//                       PositionChangeAction.hController.velocityError
-//                   )
-//
-//                   multipleTelemetry.addData(
-//                       "Y Velocity Error",
-//                       PositionChangeAction.yController.velocityError
-//                   )
-//
-                   kotlin.runCatching {
-                       multipleTelemetry.addData(
-                           "X Velocity Error",
-                           PositionChangeAction.xController.averageVelocity
-                       )
-                       multipleTelemetry.addData(
-                           "Y Velocity Error",
-                           PositionChangeAction.yController.averageVelocity
-                       )
-                   }
-//
-//
-
-                   multipleTelemetry.addEssentialLines()
-                   multipleTelemetry.update()*/
-               }
-           }
-
-           val executionGroup = Mono.buildExecutionGroup {
-               blockExecutionGroup(
-                   this@HypnoticAuto
-               )
-           }
-
-           var operatingThreadFinishedProperly = false
-           ManagedMotorGroup.keepEncoderPositions = true
-
-           val operatingThread = thread {
-               runCatching {
-                   executionGroup.executeBlocking()
-               }.onFailure {
-                   it.printStackTrace()
-               }
-
-               operatingThreadFinishedProperly = true
-           }
-
-           while (opModeIsActive())
-           {
-               if (operatingThreadFinishedProperly)
-               {
-                   break
-               }
-
-               Thread.sleep(50L)
-           }
-
-           if (operatingThreadFinishedProperly)
-           {
-               operatingThread.interrupt()
-           }
-       }
-   }
+            if (operatingThreadFinishedProperly) {
+                operatingThread.interrupt()
+            }
+        }
+    }
 
     override fun buildRobot() = HypnoticAutoRobot()
 }
