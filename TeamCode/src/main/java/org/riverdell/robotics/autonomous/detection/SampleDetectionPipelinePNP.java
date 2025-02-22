@@ -57,10 +57,12 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
     /*
      * Threshold values
      */
-    public static int AREA = 150000;
-    public static int YELLOW_MASK_THRESHOLD = 80;
+    public static int MIN_AREA = 125000;
+    public static int MAX_AREA = 250000;
+    public static int YELLOW_MASK_THRESHOLD = 90;
     public static int BLUE_MASK_THRESHOLD = 150;
     public static int RED_MASK_THRESHOLD = 150;
+    public static double PICKUP_Y_OFFSET = -4.5;
 
     /*
      * The elements we use for noise reduction
@@ -76,7 +78,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
 
     public static final int CONTOUR_LINE_THICKNESS = 2;
 
-    public static class AnalyzedStone
+    public static class AnalyzedSample
     {
         double angle;
         String color;
@@ -91,8 +93,8 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         }
     }
 
-    ArrayList<AnalyzedStone> internalStoneList = new ArrayList<>();
-    volatile ArrayList<AnalyzedStone> clientStoneList = new ArrayList<>();
+    ArrayList<AnalyzedSample> internalStoneList = new ArrayList<>();
+    volatile ArrayList<AnalyzedSample> clientStoneList = new ArrayList<>();
 
     /*
      * Camera Calibration Parameters
@@ -146,19 +148,6 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         // Otherwise, you can assume zero distortion for simplicity
         distCoeffs = new MatOfDouble(0, 0, 0, 0, 0);
     }
-/*
-    @Override
-    public void onViewportTapped()
-    {
-        int nextStageNum = stageNum + 1;
-
-        if(nextStageNum >= stages.length)
-        {
-            nextStageNum = 0;
-        }
-
-        stageNum = nextStageNum;
-    }*/
 
     @Override
     public Object processFrame(Mat input, long captureTimeNanos)
@@ -250,20 +239,20 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         return input;
     }
 
-    public ArrayList<AnalyzedStone> getDetectedStones()
+    public ArrayList<AnalyzedSample> getDetectedStones()
     {
         return clientStoneList;
     }
 
     @Nullable
-    public AnalyzedStone chooseCloseSample() {
+    public AnalyzedSample chooseCloseSample() {
         if (clientStoneList.isEmpty()) {
             return null;
         }
 
-        AnalyzedStone closestStone = clientStoneList.get(0);
+        AnalyzedSample closestStone = clientStoneList.get(0);
         double closestDist = closestStone.translate.radius();
-        for (AnalyzedStone stone : clientStoneList) {
+        for (AnalyzedSample stone : clientStoneList) {
             if (stone.translate.radius() < closestDist) {
                 closestStone = stone;
             }
@@ -340,10 +329,9 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
 
         // Do a rect fit to the contour, and draw it on the screen
         RotatedRect rotatedRectFitToContour = Imgproc.minAreaRect(contour2f);
-        if (rotatedRectFitToContour.size.area() < AREA) {
+        if (rotatedRectFitToContour.size.area() < MIN_AREA || rotatedRectFitToContour.size.area() > MAX_AREA) {
             return;
         }
-
         drawRotatedRect(rotatedRectFitToContour, input, color);
 
         // The angle OpenCV gives us can be ambiguous, so look at the shape of
@@ -399,13 +387,13 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
             drawAxis(input, rvec, tvec, cameraMatrix, distCoeffs);
 
             // Store the pose information
-            AnalyzedStone analyzedStone = new AnalyzedStone();
-            analyzedStone.angle = rotRectAngle;
-            analyzedStone.color = color;
-            analyzedStone.translate = new org.riverdell.robotics.autonomous.movement.geometry.Point(
-                    rotatedRectFitToContour.center.x, rotatedRectFitToContour.center.y);
-                
-            internalStoneList.add(analyzedStone);
+            AnalyzedSample analyzedSample = new AnalyzedSample();
+            analyzedSample.angle = rotRectAngle;
+            analyzedSample.color = color;
+            analyzedSample.translate = new org.riverdell.robotics.autonomous.movement.geometry.Point(
+                    rotatedRectFitToContour.center.x - 1280.0 / 2, rotatedRectFitToContour.center.y - 960.0 / 2);
+
+            internalStoneList.add(analyzedSample);
         }
     }
     

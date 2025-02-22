@@ -36,7 +36,9 @@ class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem() {
     fun transferRotationForce() = setRotationForce(OuttakeRotationState.Transfer)
     fun forceRotation() = setRotation(OuttakeRotationState.Force)
     fun specimenRotation() = setRotation(OuttakeRotationState.Specimen)
+
     fun depositRotation() = setRotation(OuttakeRotationState.Deposit)
+    fun autoPreDepositRotation() = setRotation(OuttakeRotationState.AutoPreDeposit)
 
     fun setRotation(state: OuttakeRotationState) = let {
         if (rotationState == state)

@@ -42,12 +42,13 @@ class TestSampleDetection : LinearOpMode() {
 
         while (opModeIsActive()) {
             somethingLikeThis.position = 0.5
-            val detected = visionPipeline.coloredPipeline.chooseCloseSample()
-            println(detected?.angle)
-            val angle = detected?.angle ?: 0.0
-            Thread.sleep(1000)
-            somethingLikeThis.position = 0.5 + (angle - 90) / 290
-            Thread.sleep(500)
+            Thread.sleep(400)
+            visionPipeline.detectedSample = null
+            while (visionPipeline.detectedSample == null && opModeIsActive()) {
+                visionPipeline.periodic()
+            }
+            val angle = visionPipeline.detectedSample?.angle ?: 0.0
+            //somethingLikeThis.position = 0.5 + (angle - 90) / 290
         }
 
         visionPipeline.dispose()

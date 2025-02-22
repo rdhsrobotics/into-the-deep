@@ -15,7 +15,7 @@ class Lift(val robot: HypnoticRobot) : AbstractSubsystem()
             this@Lift,
             PIDCoefficients(kP, kI, kD),
             kV, kA, kStatic,
-            tolerance = 10,
+            tolerance = 15,
             kF = { position, targetPosition, velocity ->
                 val error = position - targetPosition
                 if (targetPosition > 90.0) // If going up, always resist gravity

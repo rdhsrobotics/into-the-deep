@@ -54,14 +54,28 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             .exceptionally { return@exceptionally null }
     }
 
-    fun initialOuttakeFromRest(preferredLevel: OuttakeLevel = OuttakeLevel.Bar2) =
-        stateMachineRestrict(
+    fun initialOuttakeFromRest(
+        preferredLevel: OuttakeLevel = OuttakeLevel.Bar2,
+        shouldEnterPreDepositIfAvailable: Boolean = true
+    ) = stateMachineRestrict(
             InteractionCompositeState.Rest,
             InteractionCompositeState.Outtaking,
             ignoreInProgress = robot !is HypnoticAuto.HypnoticAutoRobot
         ) {
             outtakeLevel = preferredLevel
-            robot.outtake.depositRotation()
+
+            if (robot !is HypnoticAuto.HypnoticAutoRobot) {
+                robot.outtake.depositRotation()
+            } else {
+                if (shouldEnterPreDepositIfAvailable)
+                {
+                    robot.outtake.autoPreDepositRotation()
+                } else
+                {
+                    robot.outtake.depositRotation()
+                }
+            }
+
             robot.outtake.depositCoaxial()
 
             CompletableFuture.allOf(
@@ -102,8 +116,18 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         ignoreInProgress = true
     ) {
         CompletableFuture.runAsync {
+            if (robot is HypnoticAuto.HypnoticAutoRobot) {
+                robot.outtake.depositRotation()
+                Thread.sleep(200L)
+            }
+
             outtake.openClaw()
-            Thread.sleep(300L)
+
+            if (robot is HypnoticAuto.HypnoticAutoRobot) {
+                Thread.sleep(250L)
+            } else {
+                Thread.sleep(300L)
+            }
 
             outtake.readyRotation()
             outtake.readyCoaxial().join()
@@ -220,14 +244,13 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     ) =
         stateMachineRestrict(InteractionCompositeState.Pickup, InteractionCompositeState.Confirm) {
             if (slowMode) {
-                opMode.robot.intakeV4B.leftRotation.constraints = Constraint.HALF.scale(3.5)
-                opMode.robot.intakeV4B.rightRotation.constraints = Constraint.HALF.scale(3.5)
+                opMode.robot.intakeV4B.leftRotation.constraints = Constraint.HALF.scale(5.5)
+                opMode.robot.intakeV4B.rightRotation.constraints = Constraint.HALF.scale(5.5)
             }
 
             (if (!noPick) intakeV4B.v4bSamplePickup() else CompletableFuture.completedFuture(null))
                 .thenRunAsync {
-                    if (!noPick)
-                    {
+                    if (!noPick) {
                         Thread.sleep(125L)
                         intake.closeIntake()
                         Thread.sleep(125L)
@@ -282,7 +305,8 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         Thread.sleep(50)
 
         CompletableFuture.allOf(
-            outtake.depositRotation()
+            (if (robot is HypnoticAuto.HypnoticAutoRobot)
+                outtake.autoPreDepositRotation() else outtake.depositRotation())
                 .thenRunAsync {
                     intake.closeIntake()
                 },

@@ -4,8 +4,8 @@ import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class LiftConfig {
-    public static int MAX_EXTENSION = 740;
-    public static double kP = 0.035;
+    public static int MAX_EXTENSION = 730;
+    public static double kP = 0.036;
     public static double kI = 0.0;
     public static double kD = 0.0005;
 }

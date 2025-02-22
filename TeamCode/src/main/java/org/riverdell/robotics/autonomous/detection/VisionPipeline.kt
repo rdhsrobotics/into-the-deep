@@ -21,29 +21,15 @@ class VisionPipeline(
     lateinit var yellowPipeline: SampleDetectionPipelinePNP
     lateinit var coloredPipeline: SampleDetectionPipelinePNP
 
-    var detectedSample: SampleDetectionPipelinePNP.AnalyzedStone? = null
+    var detectedSample: SampleDetectionPipelinePNP.AnalyzedSample? = null
     var paused = false
 
-    override fun start() {
-    }
+    override fun start() {}
 
     override fun periodic() {
         if (!paused) {
-            yellowPipeline.detectedStones.forEach {
-                if (detectedSample == null) { detectedSample = it }
-                if (it.translate.radius() < detectedSample!!.translate.radius()) {
-                    detectedSample = it
-                }
-            }
-
-            if (detectedSample == null) {
-                coloredPipeline.detectedStones.forEach {
-                    if (detectedSample == null) { detectedSample = it }
-                    if (it.translate.radius() < detectedSample!!.translate.radius()) {
-                        detectedSample = it
-                    }
-                }
-            }
+            detectedSample = yellowPipeline.chooseCloseSample()
+            println("Periodic detected sample: " + detectedSample?.translate)
         }
     }
 

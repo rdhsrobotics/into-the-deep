@@ -2,7 +2,6 @@ package org.riverdell.robotics.autonomous.movement;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.PIDCoefficients;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -13,7 +12,6 @@ import org.riverdell.robotics.autonomous.movement.geometry.Point;
 import org.riverdell.robotics.autonomous.movement.geometry.Pose;
 import org.riverdell.robotics.autonomous.movement.localization.TwoWheelLocalizer;
 
-import java.sql.SQLOutput;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,22 +27,22 @@ public class PositionChangeAction {
     private final HypnoticAuto instance;
     private final RootExecutionGroup executionGroup;
 
-    public static PIDCoefficients strafePID = new PIDCoefficients(0.125, 0.0, 0.0185);
-    public static PIDCoefficients straightPID = new PIDCoefficients(0.077, 0.0, 0.0155);
-    public static PIDCoefficients headingPID = new PIDCoefficients(1.02, 0.0, -0.125);
+    public static PIDCoefficients strafePID = new PIDCoefficients(0.18, 0.0, 0.024);
+    public static PIDCoefficients straightPID = new PIDCoefficients(0.077, 0.0, 0.013);
+    public static PIDCoefficients headingPID = new PIDCoefficients(1.1, 0.0, -0.125);
 
-    public static PIDCoefficients extendoOutHeadingPID = new PIDCoefficients(0.975, 0.0, -0.195);
+    public static PIDCoefficients extendoOutHeadingPID = new PIDCoefficients(1.08, 0.0, -0.19);
 
-    public static double TURN_POWER_BOOST = -0.13;
-    public static double STRAFE_POWER_BOOST = 0.125;
+    public static double TURN_POWER_BOOST = -0.05;
+    public static double STRAFE_POWER_BOOST = 0.045;
     public static double STRAIGHT_POWER_BOOST = 0.03;
 
     public static double TURN_PREDICTION_ACCELERATION = 0;
     public static double TURN_PREDICTION_VELOCITY = 0;
     public static double TURN_MAX_VELOCITY = 5;
 
-    public double maxTranslationalError = 0.8;
-    public double maxHeadingError = 1.4 * Math.PI / 180;
+    public double maxTranslationalError = 1.1;
+    public double maxHeadingErrorRad = 1.4 * Math.PI / 180;
     public double maxTranslationalVelocity = 2.5;
     public double maxHeadingVelocity = 50;
     private final double atTargetMillis = 30;
@@ -89,7 +87,7 @@ public class PositionChangeAction {
 
         strafeController.setTolerance(maxTranslationalError, maxTranslationalVelocity);
         straightController.setTolerance(maxTranslationalError, maxTranslationalVelocity);
-        hController.setTolerance(maxHeadingError, maxHeadingVelocity);
+        hController.setTolerance(maxHeadingErrorRad, maxHeadingVelocity);
     }
 
     private @Nullable PathAlgorithm pathAlgorithm = null;
@@ -347,6 +345,14 @@ public class PositionChangeAction {
         this.maxRotationalPower = maxRotationalSpeed;
     }
 
+    public void withCustomHeadingTolerance(double headingToleranceDeg) {
+        this.maxHeadingErrorRad = headingToleranceDeg * Math.PI / 180;
+    }
+
+    public void withCustomTranslationalTolerance(double translationalTolerance) {
+        this.maxTranslationalError = translationalTolerance;
+    }
+
     public void withCustomMaxTranslationalSpeed(double maxTranslationalSpeed) {
         this.maxTranslationalPower = maxTranslationalSpeed;
     }
@@ -367,8 +373,10 @@ public class PositionChangeAction {
         hController = new PIDFController(PID, (current, target, vel) -> 0.0);
     }
 
-    public void withExtendoOut() {
-        withCustomHeadingPID(extendoOutHeadingPID);
+    public void withExtendoOut(boolean use) {
+        if (use) {
+            withCustomHeadingPID(extendoOutHeadingPID);
+        }
     }
 
     public void disableAutomaticDeath() {

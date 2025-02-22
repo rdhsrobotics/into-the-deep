@@ -13,6 +13,11 @@ class TestMovement : HypnoticAuto({ opMode ->
         val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
         visionPipeline.pause()
 
-        navigateTo(Pose(TestConfig.x, TestConfig.y, TestConfig.turn.degrees)) {withAutomaticDeath(TestConfig.automaticDeath)}
+        navigateTo(Pose(TestConfig.x, TestConfig.y, TestConfig.turn.degrees)) {
+            withAutomaticDeath(
+                TestConfig.automaticDeath
+            )
+            withExtendoOut(TestConfig.extendoOut)
+        }
     }
 })

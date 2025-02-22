@@ -14,8 +14,11 @@ import org.riverdell.robotics.autonomous.movement.purePursuitNavigateTo
 import org.riverdell.robotics.autonomous.movement.purepursuit.ActionWaypoint
 import org.riverdell.robotics.autonomous.movement.purepursuit.FieldWaypoint
 import org.riverdell.robotics.subsystems.intake.WristState
+import org.riverdell.robotics.subsystems.intake.composite.IntakeConfig
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
+import org.riverdell.robotics.subsystems.slides.ExtensionConfig
+import org.riverdell.robotics.subsystems.slides.LiftConfig
 
 abstract class FiveSampleAutonomous(
     sampleType: SampleType
@@ -33,6 +36,7 @@ abstract class FiveSampleAutonomous(
         FieldWaypoint(Pose(-70.0, -35.0, (180.0).degrees), 10.0)
     )
 
+    var wasAbleToInitiateOuttake = false
     val toSubmersible = listOf(
         FieldWaypoint(depositHighBucket, 25.0),
         FieldWaypoint(Pose(-80.0, 20.0, 0.0), 20.0),
@@ -58,12 +62,22 @@ abstract class FiveSampleAutonomous(
 
     val toBasket = listOf(
         FieldWaypoint(Pose(-52.1, 20.0, 10.0), 25.0),
-        FieldWaypoint(depositHighBucket.add(Pose(-5.0, -5.0, 0.0)), 25.0),
-        FieldWaypoint(depositHighBucket, 5.0),
+        FieldWaypoint(depositHighBucket.add(Pose(-10.0, -10.0, 0.0)), 25.0),
+        ActionWaypoint {
+            if (opMode.robot.intakeComposite.state == InteractionCompositeState.OuttakeReady) {
+                opMode.robot.intakeComposite
+                    .initialOuttake(OuttakeLevel.SomethingLikeThat)
+                wasAbleToInitiateOuttake = true
+            }
+        },
+        FieldWaypoint(depositHighBucket.add(Pose(-6.0, -6.0, 0.0)), 20.0),
+        FieldWaypoint(depositHighBucket.add(Pose(-3.0, -3.0, 0.0)), 10.0),
+        FieldWaypoint(depositHighBucket, 3.0),
     )
 
     fun submersibleCycle() {
         single("submerse itself") {
+            visionPipeline.pause()
             purePursuitNavigateTo(*toSubmersible.toTypedArray()) {
                 withAutomaticDeath(10000.0)
                 withCustomMaxTranslationalSpeed(1.0)
@@ -74,14 +88,21 @@ abstract class FiveSampleAutonomous(
         visionIntake(opMode)
 
         single("Return to basket") {
+            visionPipeline.pause()
             purePursuitNavigateTo(*toBasket.toTypedArray()) {
                 withAutomaticDeath(10000.0)
                 withCustomMaxTranslationalSpeed(1.0)
                 withCustomMaxRotationalSpeed(1.0)
             }
 
-            if (!opMode.robot.intakeComposite.waitForState(org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState.Outtaking)) {
-                return@single
+            if (wasAbleToInitiateOuttake) {
+                if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Outtaking)) {
+                    return@single
+                }
+            } else {
+                opMode.robot.intakeComposite
+                    .initialOuttake(OuttakeLevel.SomethingLikeThat)
+                    .join()
             }
 
             opMode.robot.intakeComposite.outtakeCompleteAndRest().join()
@@ -92,6 +113,7 @@ abstract class FiveSampleAutonomous(
 
     fun ExecutionGroup.depositToHighBasket(initial: Boolean = false) {
         single("high basket deposit") {
+            visionPipeline.pause()
             if (initial) {
                 opMode.robot.intakeComposite
                     .initialOuttakeFromRest(OuttakeLevel.SomethingLikeThat)
@@ -104,7 +126,10 @@ abstract class FiveSampleAutonomous(
                     }
             }
 
-            navigateTo(depositHighBucket)
+            navigateTo(depositHighBucket) {
+                withCustomHeadingTolerance(2.0)
+            }
+
             if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Outtaking)) {
                 return@single
             }
@@ -118,22 +143,31 @@ abstract class FiveSampleAutonomous(
     ) {
 
         single("navigate to pickup position") {
+            visionPipeline.pause()
             opMode.robot.intakeComposite.prepareForPickup(
                 position.wristState,
                 // needs to go closer into the wall
                 doNotUseAutoMode = position.extendoMode,
+//                submersibleOverride = if (position.extendoMode) 300 else IntakeConfig.MAX_EXTENSION,
                 wideOpen = true,
             )
 
             navigateTo(position.pose) {
-                withExtendoOut()
+                withExtendoOut(true)
                 disableAutomaticDeath()
+                withCustomHeadingTolerance(0.8)
+                withCustomTranslationalTolerance(0.7)
+            }
+
+            if (position.extendoMode) {
+//                opMode.robot.extension.extendToAndStayAt(400).join()
             }
         }
     }
 
     fun ExecutionGroup.confirmIntakeAndTransfer(extendoMode: Boolean = false) {
         single("confirm intake") {
+            visionPipeline.pause()
             opMode.robot.intakeComposite
                 .intakeAndConfirm {
                     if (extendoMode) {
@@ -147,12 +181,11 @@ abstract class FiveSampleAutonomous(
     // preload
     depositToHighBasket(initial = true)
 
-    val lastPickup = Pose(-45.7, 4.0, (180).degrees)
     val pickupPositions = listOf(
-        GroundPickupPosition(pose = Pose(-11.5, 18.0, (90.0).degrees)),
-        GroundPickupPosition(pose = Pose(-11.5, 34.5, (90.0).degrees)),
+        GroundPickupPosition(pose = Pose(-11.5, 17.75, (90.0).degrees)),
+        GroundPickupPosition(pose = Pose(-11.5, 34.75, (90.0).degrees)),
         GroundPickupPosition(
-            pose = lastPickup,
+            pose = Pose(-45.7, 4.5, (180).degrees),
             extendoMode = true,
             wristState = WristState.Perpendicular
         ),
@@ -168,8 +201,12 @@ abstract class FiveSampleAutonomous(
     submersibleCycle()
 
     single("park near submersible") {
+        visionPipeline.pause()
         opMode.robot.intakeComposite
-            .initialOuttakeFromRest(OuttakeLevel.Bar2)
+            .initialOuttakeFromRest(
+                OuttakeLevel.Bar2,
+                shouldEnterPreDepositIfAvailable = false
+            )
 
         purePursuitNavigateTo(*parkSubmersible.toTypedArray()) {
             withAutomaticDeath(9000.0)
