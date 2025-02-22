@@ -13,6 +13,7 @@ import org.riverdell.robotics.autonomous.movement.geometry.Point
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
 import org.riverdell.robotics.autonomous.movement.navigateTo
 import org.riverdell.robotics.subsystems.intake.WristState
+import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 import kotlin.math.abs
 
 fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = false) {
@@ -29,9 +30,8 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
 
         val clock = ElapsedTime(ElapsedTime.Resolution.MILLISECONDS)
         var iterations = 0
-        while (detectedSample == null && iterations < 5) {
-            if (iterations > 0)
-            {
+        while (detectedSample == null && iterations < 3) {
+            if (iterations > 0) {
                 MecanumTranslations
                     .getPowers(
                         Pose(0.0, -0.3, 0.0),
@@ -39,16 +39,17 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
                     )
                     .propagate(opMode)
 
-                Thread.sleep(500)
+                Thread.sleep(350L)
                 MecanumTranslations
                     .getPowers(
                         Pose(0.0, 0.0, 0.0),
                         0.0, 0.0, 0.0
                     )
                     .propagate(opMode)
-
-                Thread.sleep(1000L)
             }
+
+
+            Thread.sleep(1000L)
 
             clock.reset()
             while (detectedSample == null && clock.time() < 68) {
@@ -96,6 +97,11 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
                 .apply {
                     if (isolated) {
                         join()
+                    } else {
+                        thenAccept {
+                            opMode.robot.intakeComposite
+                                .initialOuttake(OuttakeLevel.SomethingLikeThat)
+                        }
                     }
                 }
         } else {

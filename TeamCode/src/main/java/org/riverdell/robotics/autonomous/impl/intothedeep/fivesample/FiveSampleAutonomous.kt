@@ -26,7 +26,6 @@ abstract class FiveSampleAutonomous(
     val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
 
     val startPose = Pose2d(0.0, 0.0, 0.degrees)
-
     val depositHighBucket = Pose(-14.0, 23.5, (45.0).degrees)
 
     val parkSubmersible = listOf(
@@ -36,6 +35,7 @@ abstract class FiveSampleAutonomous(
         FieldWaypoint(Pose(-70.0, -35.0, (180.0).degrees), 10.0)
     )
 
+    //-81.55 4.67 -0.012
     var wasAbleToInitiateOuttake = false
     val toSubmersible = listOf(
         FieldWaypoint(depositHighBucket, 25.0),
@@ -51,27 +51,20 @@ abstract class FiveSampleAutonomous(
             visionPipeline.resume()
         },
         FieldWaypoint(
-            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), -8.0, 0.0),
+            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), 10.0, 0.0),
             25.0
         ),
         FieldWaypoint(
-            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), -18.0, 0.0),
-            10.0
+            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), 0.0, 0.0),
+            5.0
         )
     )
 
     val toBasket = listOf(
         FieldWaypoint(Pose(-52.1, 20.0, 10.0), 25.0),
-        FieldWaypoint(depositHighBucket.add(Pose(-10.0, -10.0, 0.0)), 25.0),
-        ActionWaypoint {
-            if (opMode.robot.intakeComposite.state == InteractionCompositeState.OuttakeReady) {
-                opMode.robot.intakeComposite
-                    .initialOuttake(OuttakeLevel.SomethingLikeThat)
-                wasAbleToInitiateOuttake = true
-            }
-        },
-        FieldWaypoint(depositHighBucket.add(Pose(-6.0, -6.0, 0.0)), 20.0),
-        FieldWaypoint(depositHighBucket.add(Pose(-3.0, -3.0, 0.0)), 10.0),
+        FieldWaypoint(depositHighBucket.add(Pose(-20.0, -20.0, 0.0)), 25.0),
+        FieldWaypoint(depositHighBucket.add(Pose(-15.0, -15.0, 0.0)), 20.0),
+        FieldWaypoint(depositHighBucket.add(Pose(-10.0, -3.0, 0.0)), 10.0),
         FieldWaypoint(depositHighBucket, 3.0),
     )
 
@@ -95,14 +88,8 @@ abstract class FiveSampleAutonomous(
                 withCustomMaxRotationalSpeed(1.0)
             }
 
-            if (wasAbleToInitiateOuttake) {
-                if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Outtaking)) {
-                    return@single
-                }
-            } else {
-                opMode.robot.intakeComposite
-                    .initialOuttake(OuttakeLevel.SomethingLikeThat)
-                    .join()
+            if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Outtaking)) {
+                return@single
             }
 
             opMode.robot.intakeComposite.outtakeCompleteAndRest().join()
@@ -148,19 +135,14 @@ abstract class FiveSampleAutonomous(
                 position.wristState,
                 // needs to go closer into the wall
                 doNotUseAutoMode = position.extendoMode,
-//                submersibleOverride = if (position.extendoMode) 300 else IntakeConfig.MAX_EXTENSION,
                 wideOpen = true,
             )
 
             navigateTo(position.pose) {
                 withExtendoOut(true)
-                disableAutomaticDeath()
+                withAutomaticDeath(if (position.extendoMode) 8000.0 else 5000.0)
                 withCustomHeadingTolerance(0.8)
                 withCustomTranslationalTolerance(0.7)
-            }
-
-            if (position.extendoMode) {
-//                opMode.robot.extension.extendToAndStayAt(400).join()
             }
         }
     }
@@ -182,10 +164,10 @@ abstract class FiveSampleAutonomous(
     depositToHighBasket(initial = true)
 
     val pickupPositions = listOf(
-        GroundPickupPosition(pose = Pose(-11.5, 17.75, (90.0).degrees)),
+        GroundPickupPosition(pose = Pose(-11.5, 17.75, (90.5).degrees)),
         GroundPickupPosition(pose = Pose(-11.5, 34.75, (90.0).degrees)),
         GroundPickupPosition(
-            pose = Pose(-45.7, 4.5, (180).degrees),
+            pose = Pose(-44.7, 4.5, (180).degrees),
             extendoMode = true,
             wristState = WristState.Perpendicular
         ),

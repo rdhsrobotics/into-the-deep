@@ -124,7 +124,7 @@ class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem() {
     private fun rotationRotateTo(position: Double) = let {
         CompletableFuture.allOf(
             leftRotation.setTarget(1.0 - position, ServoBehavior.MotionProfile),
-//            rightRotation.setTarget(position, ServoBehavior.MotionProfile)
+            rightRotation.setTarget(position, ServoBehavior.MotionProfile)
         )
     }
 
@@ -134,7 +134,7 @@ class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem() {
     private fun rotationRotateToForce(position: Double) = let {
         CompletableFuture.allOf(
             leftRotation.setTarget(1.0 - position, ServoBehavior.Direct),
-//            rightRotation.setTarget(position, ServoBehavior.Direct)
+            rightRotation.setTarget(position, ServoBehavior.Direct)
         )
     }
 

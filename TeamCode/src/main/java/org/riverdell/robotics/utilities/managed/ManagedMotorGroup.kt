@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor
 import com.qualcomm.robotcore.hardware.DcMotorEx
 import io.liftgate.robotics.mono.states.StateHolder
 import io.liftgate.robotics.mono.states.StateResult
+import org.riverdell.robotics.HypnoticRobot
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import kotlin.math.abs
@@ -140,12 +141,16 @@ class ManagedMotorGroup(
             }
 
             val velocity = master.velocity
+            val voltage = HypnoticRobot.instance.drivetrain.voltage()
 
             return pidfController
                 .update(
                     measuredPosition = current.toDouble(),
                     measuredVelocity = velocity
                 )
+                .let {
+                    it * (13.0 / voltage)
+                }
                 .coerceIn(-1.0, 1.0)
         }
 

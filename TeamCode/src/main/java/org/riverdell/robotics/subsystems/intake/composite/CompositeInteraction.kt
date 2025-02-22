@@ -58,30 +58,28 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         preferredLevel: OuttakeLevel = OuttakeLevel.Bar2,
         shouldEnterPreDepositIfAvailable: Boolean = true
     ) = stateMachineRestrict(
-            InteractionCompositeState.Rest,
-            InteractionCompositeState.Outtaking,
-            ignoreInProgress = robot !is HypnoticAuto.HypnoticAutoRobot
-        ) {
-            outtakeLevel = preferredLevel
+        InteractionCompositeState.Rest,
+        InteractionCompositeState.Outtaking,
+        ignoreInProgress = robot !is HypnoticAuto.HypnoticAutoRobot
+    ) {
+        outtakeLevel = preferredLevel
 
-            if (robot !is HypnoticAuto.HypnoticAutoRobot) {
-                robot.outtake.depositRotation()
+        if (robot !is HypnoticAuto.HypnoticAutoRobot) {
+            robot.outtake.depositRotation()
+        } else {
+            if (shouldEnterPreDepositIfAvailable) {
+                robot.outtake.autoPreDepositRotation()
             } else {
-                if (shouldEnterPreDepositIfAvailable)
-                {
-                    robot.outtake.autoPreDepositRotation()
-                } else
-                {
-                    robot.outtake.depositRotation()
-                }
+                robot.outtake.depositRotation()
             }
-
-            robot.outtake.depositCoaxial()
-
-            CompletableFuture.allOf(
-                robot.lift.extendToAndStayAt(outtakeLevel.encoderLevel)
-            )
         }
+
+        robot.outtake.depositCoaxial()
+
+        CompletableFuture.allOf(
+            robot.lift.extendToAndStayAt(outtakeLevel.encoderLevel)
+        )
+    }
 
     fun initialOuttake(preferredLevel: OuttakeLevel = OuttakeLevel.HighBasket) =
         stateMachineRestrict(
@@ -195,7 +193,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     fun wallOuttakeToSpecimenReady() =
         stateMachineRestrict(
             InteractionCompositeState.WallIntakeViaOuttake,
-            InteractionCompositeState.SpecimenReady
+            InteractionCompositeState.OuttakeReady
         ) {
             CompletableFuture.allOf(
                 robot.outtake.closeClaw(),
@@ -291,17 +289,13 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             outtake.transferCoaxial()
         ).join()
 
-
+        Thread.sleep(100)
         CompletableFuture.allOf(
-            outtake.transferRotationForce(),
-            outtake.transferCoaxialForce()
-        ).join()
-
-        Thread.sleep(150)
-        CompletableFuture.allOf(
-            intake.openIntake(),
-            outtake.closeClaw()
+            intake.openIntake(true),
         )
+
+        Thread.sleep(80)
+        outtake.closeClaw()
         Thread.sleep(50)
 
         CompletableFuture.allOf(

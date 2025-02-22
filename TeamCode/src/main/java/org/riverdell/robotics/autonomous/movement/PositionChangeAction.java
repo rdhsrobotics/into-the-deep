@@ -44,8 +44,8 @@ public class PositionChangeAction {
     public double maxTranslationalError = 1.1;
     public double maxHeadingErrorRad = 1.4 * Math.PI / 180;
     public double maxTranslationalVelocity = 2.5;
-    public double maxHeadingVelocity = 50;
-    private final double atTargetMillis = 30;
+    public double maxHeadingVelocity = 30;
+    private final double atTargetMillis = 50;
 
     public PIDFController strafeController;
     public PIDFController straightController;

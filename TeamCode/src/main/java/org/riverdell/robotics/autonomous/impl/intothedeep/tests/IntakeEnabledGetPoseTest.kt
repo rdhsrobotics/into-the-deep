@@ -14,6 +14,11 @@ class IntakeEnabledGetPoseTest : HypnoticAuto(something@{ opMode ->
             submersibleOverride = 300
         ).join()
 
-        Thread.sleep(100000L)
+        while (opMode.opModeIsActive()) {
+            opMode.robot.multipleTelemetry.addLine("Localizer: ${
+                opMode.robot.drivetrain.localizer.pose
+            }")
+            opMode.robot.multipleTelemetry.update()
+        }
     }
 })
