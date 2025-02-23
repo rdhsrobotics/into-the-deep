@@ -38,7 +38,7 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
                     )
                     .propagate(opMode)
 
-                Thread.sleep(200L)
+                Thread.sleep(140L)
                 MecanumTranslations
                     .getPowers(
                         Pose(0.0, 0.0, 0.0),
@@ -111,9 +111,24 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
 
             opMode.robot.intakeComposite
                 .intakeAndConfirm(slowMode = true, noPick = true)
-                .join()
-
-            opMode.robot.intakeComposite.confirmAndTransferAndReady().join()
+                .thenComposeAsync {
+                    opMode.robot.intakeComposite.confirmAndTransferAndReady()
+                        .thenComposeAsync {
+                            opMode.robot.intakeComposite.outtakeCompleteAndRestFromOuttakeReady()
+                                .thenComposeAsync {
+                                    opMode.robot.intakeComposite
+                                        .initialOuttakeFromRest(
+                                            OuttakeLevel.Bar2,
+                                            shouldEnterPreDepositIfAvailable = false
+                                        )
+                                }
+                        }
+                }
+                .apply {
+                    if (isolated) {
+                        join()
+                    }
+                }
         }
 
         visionPipeline.pause()

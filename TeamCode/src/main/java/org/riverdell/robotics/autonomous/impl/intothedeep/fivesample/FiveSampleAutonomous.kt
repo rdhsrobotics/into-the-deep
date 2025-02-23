@@ -29,25 +29,15 @@ abstract class FiveSampleAutonomous(
     val depositHighBucket = Pose(-14.0, 23.5, (45.0).degrees)
 
     val parkSubmersible = listOf(
-        FieldWaypoint(depositHighBucket, 25.0),
-        FieldWaypoint(Pose(-70.0, 13.0, (70.0).degrees), 25.0),
-        FieldWaypoint(Pose(-70.0, -38.0, (180.0).degrees), 25.0),
-        FieldWaypoint(Pose(-70.0, -35.0, (180.0).degrees), 10.0)
-    )
-
-    val toAbortedPark = listOf(
-        FieldWaypoint(
-            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), 0.0, 0.0),
-            25.0
-        ),
-        FieldWaypoint(Pose(-70.0, 13.0, (0.0).degrees), 25.0),
-        FieldWaypoint(Pose(-70.0, 10.0, (180.0).degrees), 25.0),
-        FieldWaypoint(Pose(-70.0, -35.0, (180.0).degrees), 10.0)
+        FieldWaypoint(depositHighBucket, 30.0),
+        FieldWaypoint(Pose(-70.0, 13.0, (70.0).degrees), 30.0),
+        FieldWaypoint(Pose(-70.0, -38.0, (180.0).degrees), 20.0),
+        FieldWaypoint(Pose(-70.0, -42.0, (180.0).degrees), 15.0)
     )
 
     val toSubmersible = listOf(
         FieldWaypoint(depositHighBucket, 25.0),
-        FieldWaypoint(Pose(-80.0, 20.0, 0.0), 20.0),
+        FieldWaypoint(Pose(-80.0, 20.0, 0.0), 30.0),
         ActionWaypoint {
             opMode.robot.intakeComposite.prepareForPickup(
                 WristState.Lateral,
@@ -63,8 +53,8 @@ abstract class FiveSampleAutonomous(
             25.0
         ),
         FieldWaypoint(
-            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), 0.0, 0.0),
-            5.0
+            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), -16.0, 0.0),
+            20.0
         )
     )
 
@@ -90,14 +80,6 @@ abstract class FiveSampleAutonomous(
 
         single("Return to basket or park") {
             if (this["abortMission"] != null) {
-                if (opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Rest)) {
-                    opMode.robot.intakeComposite
-                        .initialOuttakeFromRest(
-                            OuttakeLevel.Bar2,
-                            shouldEnterPreDepositIfAvailable = false
-                        )
-                }
-
                 navigateTo(Pose(-82.0, 0.0, 180.0.degrees))
                 navigateTo(Pose(-82.0, -25.0, 180.0.degrees))
                 return@single
@@ -188,10 +170,10 @@ abstract class FiveSampleAutonomous(
     depositToHighBasket(initial = true)
 
     val pickupPositions = listOf(
-        GroundPickupPosition(pose = Pose(-11.5, 18.5, (90.0).degrees)),
-        GroundPickupPosition(pose = Pose(-11.5, 34.75, (90.0).degrees)),
+        GroundPickupPosition(pose = Pose(-11.75, 19.0, (90.0).degrees)),
+        GroundPickupPosition(pose = Pose(-11.75, 34.75, (90.0).degrees)),
         GroundPickupPosition(
-            pose = Pose(-45.5, 4.5, (180).degrees),
+            pose = Pose(-45.5, 4.0, (180).degrees),
             extendoMode = true,
             wristState = WristState.Perpendicular
         ),
@@ -207,17 +189,20 @@ abstract class FiveSampleAutonomous(
     submersibleCycle()
 
     single("park near submersible") {
-        visionPipeline.pause()
-        opMode.robot.intakeComposite
-            .initialOuttakeFromRest(
-                OuttakeLevel.Bar2,
-                shouldEnterPreDepositIfAvailable = false
-            )
+        if (this["abortMission"] == null)
+        {
+            visionPipeline.pause()
+            opMode.robot.intakeComposite
+                .initialOuttakeFromRest(
+                    OuttakeLevel.Bar2,
+                    shouldEnterPreDepositIfAvailable = false
+                )
 
-        purePursuitNavigateTo(*parkSubmersible.toTypedArray()) {
-            withAutomaticDeath(9000.0)
-            withCustomMaxTranslationalSpeed(0.5)
-            withCustomMaxRotationalSpeed(0.5)
+            purePursuitNavigateTo(*parkSubmersible.toTypedArray()) {
+                withAutomaticDeath(9000.0)
+                withCustomMaxTranslationalSpeed(0.5)
+                withCustomMaxRotationalSpeed(0.5)
+            }
         }
     }
 }, {

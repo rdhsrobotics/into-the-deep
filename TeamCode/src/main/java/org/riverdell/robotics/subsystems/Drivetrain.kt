@@ -1,5 +1,6 @@
 package org.riverdell.robotics.subsystems
 
+import com.acmerobotics.roadrunner.geometry.Pose2d
 import com.arcrobotics.ftclib.drivebase.MecanumDrive
 import com.arcrobotics.ftclib.gamepad.GamepadEx
 import com.arcrobotics.ftclib.hardware.motors.Motor
@@ -37,7 +38,7 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
 
     override fun start()
     {
-
+        localizer.poseEstimate = Pose2d()
     }
 
     /**
@@ -95,6 +96,7 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
     {
         listOf(robot.hardware.backLeft, robot.hardware.frontLeft, robot.hardware.frontRight, robot.hardware.backRight).forEach(consumer::invoke)
     }
+
 
     override fun isCompleted() = true
     override fun dispose()

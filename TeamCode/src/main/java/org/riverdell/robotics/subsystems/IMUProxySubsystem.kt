@@ -26,7 +26,7 @@ class IMUProxySubsystem(private val hypnoticOpMode: HypnoticOpMode) : AbstractSu
 
     val imuState by state(write = { _ -> }, read = {
         val newAngles = preferredIMU.robotYawPitchRollAngles
-        if (newAngles.yaw == 0.0 && newAngles.roll == 0.0 && newAngles.pitch == 0.0)
+        if (newAngles.acquisitionTime == 0L)
         {
             failures += 1
 
@@ -60,6 +60,7 @@ class IMUProxySubsystem(private val hypnoticOpMode: HypnoticOpMode) : AbstractSu
     }
 
     override fun start() {
+
     }
 
 }
