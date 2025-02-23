@@ -28,7 +28,7 @@ class VisionPipeline(
 
     override fun periodic() {
         if (!paused) {
-            detectedSample = yellowPipeline.chooseCloseSample()
+            detectedSample = yellowPipeline.chooseClosestValidSample() ?: coloredPipeline.chooseClosestValidSample()
             println("Periodic detected sample: " + detectedSample?.translate)
         }
     }

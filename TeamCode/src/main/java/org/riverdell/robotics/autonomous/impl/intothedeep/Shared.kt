@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.util.ElapsedTime
 import io.liftgate.robotics.mono.pipeline.RootExecutionGroup
 import io.liftgate.robotics.mono.pipeline.single
 import org.riverdell.robotics.autonomous.HypnoticAuto
-import org.riverdell.robotics.autonomous.HypnoticAuto.Companion.nextUpdates
 import org.riverdell.robotics.autonomous.HypnoticAuto.HypnoticAutoRobot
 import org.riverdell.robotics.autonomous.detection.SampleDetectionPipelinePNP
 import org.riverdell.robotics.autonomous.detection.SampleDetectionPipelinePNP.AnalyzedSample
@@ -39,7 +38,7 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
                     )
                     .propagate(opMode)
 
-                Thread.sleep(350L)
+                Thread.sleep(200L)
                 MecanumTranslations
                     .getPowers(
                         Pose(0.0, 0.0, 0.0),
@@ -59,7 +58,6 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
 
             iterations += 1
         }
-
 
         Thread.sleep(50L)
 
@@ -89,7 +87,11 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
 
 
             if (abs(translate.x) > 2.0 || abs(translate.y) > 1.5) {
-                navigateTo(target)
+                navigateTo(target) {
+                    withCustomTranslationalTolerance(1.3)
+                    withCustomHeadingTolerance(2.0)
+                    withAutomaticDeath(1500.0)
+                }
             }
 
             opMode.robot.intakeComposite.intakeAndConfirm(slowMode = true).join()
@@ -100,11 +102,13 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
                     } else {
                         thenAccept {
                             opMode.robot.intakeComposite
-                                .initialOuttake(OuttakeLevel.SomethingLikeThat)
+                                .initialOuttake(OuttakeLevel.HighBasket)
                         }
                     }
                 }
         } else {
+            this["abortMission"] = true
+
             opMode.robot.intakeComposite
                 .intakeAndConfirm(slowMode = true, noPick = true)
                 .join()

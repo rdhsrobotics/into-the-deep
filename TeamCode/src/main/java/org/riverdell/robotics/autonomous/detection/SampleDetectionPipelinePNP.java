@@ -1,5 +1,7 @@
 package org.riverdell.robotics.autonomous.detection;
 
+import static java.lang.Math.abs;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 
@@ -245,7 +247,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
     }
 
     @Nullable
-    public AnalyzedSample chooseCloseSample() {
+    public AnalyzedSample chooseClosestValidSample() {
         if (clientStoneList.isEmpty()) {
             return null;
         }
@@ -253,8 +255,10 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         AnalyzedSample closestStone = clientStoneList.get(0);
         double closestDist = closestStone.translate.radius();
         for (AnalyzedSample stone : clientStoneList) {
-            if (stone.translate.radius() < closestDist) {
-                closestStone = stone;
+            if (!(abs(stone.translate.x) > 290) && !(abs(stone.translate.y) > 200)) {
+                if (stone.translate.radius() < closestDist) {
+                    closestStone = stone;
+                }
             }
         }
         return closestStone;

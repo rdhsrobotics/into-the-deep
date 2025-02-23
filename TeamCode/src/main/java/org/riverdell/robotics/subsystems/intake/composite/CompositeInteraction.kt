@@ -131,6 +131,9 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             outtake.readyCoaxial().join()
 
             lift.extendToAndStayAt(0)
+                .thenRun {
+                    lift.slides.idle()
+                }
             CompletableFuture.completedFuture(null)
         }
     }
@@ -141,6 +144,9 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     ) {
         CompletableFuture.runAsync {
             lift.extendToAndStayAt(0)
+                .thenRun {
+                    lift.slides.idle()
+                }
             Thread.sleep(500L)
             outtake.openClaw()
             Thread.sleep(200L)
@@ -160,6 +166,9 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
 
         CompletableFuture.runAsync {
             lift.extendToAndStayAt(0)
+                .thenRun {
+                    lift.slides.idle()
+                }
             outtake.readyRotation()
             outtake.readyCoaxial()
             CompletableFuture.completedFuture(null)
@@ -289,6 +298,11 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             outtake.transferCoaxial()
         ).join()
 
+        CompletableFuture.allOf(
+            outtake.transferRotationForce(),
+            outtake.transferCoaxialForce()
+        ).join()
+
         Thread.sleep(100)
         CompletableFuture.allOf(
             intake.openIntake(true),
@@ -325,7 +339,10 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             InteractionCompositeState.OuttakeReady
         ) {
             CompletableFuture.allOf(
-                extension.extendToAndStayAt(0),
+                extension.extendToAndStayAt(0)
+                    .thenRun {
+                        lift.slides.idle()
+                    },
                 CompletableFuture.runAsync {
                     Thread.sleep(250L)
                     intakeV4B.coaxialRest().join()

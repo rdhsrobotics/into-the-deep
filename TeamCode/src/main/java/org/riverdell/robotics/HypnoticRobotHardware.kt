@@ -15,6 +15,7 @@ import org.riverdell.robotics.subsystems.intake.v4b.V4BState
 import org.riverdell.robotics.subsystems.outtake.OuttakeClawState
 import org.riverdell.robotics.subsystems.outtake.OuttakeCoaxialState
 import org.riverdell.robotics.subsystems.outtake.OuttakeRotationState
+import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
 import kotlin.math.absoluteValue
 
 class HypnoticRobotHardware(private val opMode: LinearOpMode) {
@@ -29,8 +30,8 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
     lateinit var backRight: DcMotorEx
     lateinit var backLeft: DcMotorEx
 
-    lateinit var imu: IMU
-    lateinit var imuLol: IMU
+    lateinit var bnoIMU: IMU
+    lateinit var bhiIMU: IMU
 
     lateinit var intakeV4BLeft: ServoImplEx
     lateinit var intakeV4BRight: ServoImplEx
@@ -65,8 +66,8 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
 //        )
 //        imu.resetYaw()
 
-        imuLol = opMode.hardwareMap["lol"] as IMU
-        imuLol.initialize(
+        bhiIMU = opMode.hardwareMap["lol"] as IMU
+        bhiIMU.initialize(
             IMU.Parameters(
                 RevHubOrientationOnRobot(
                     RevHubOrientationOnRobot.LogoFacingDirection.UP,
@@ -74,7 +75,7 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
                 )
             )
         )
-        imuLol.resetYaw()
+        bhiIMU.resetYaw()
 
         frontLeft = opMode.hardwareMap.get(DcMotorEx::class.java, "frontLeft")
         frontRight = opMode.hardwareMap.get(DcMotorEx::class.java, "frontRight")
@@ -110,8 +111,11 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
         liftMotorLeft.power = 0.0
         liftMotorRight.power = 0.0
 
-        liftMotorLeft.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
-        liftMotorRight.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
+        if (!ManagedMotorGroup.keepEncoderPositions)
+        {
+            liftMotorLeft.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
+            liftMotorRight.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
+        }
 
         extensionMotorLeft = opMode.hardwareMap["extendoLeft"] as DcMotorEx
         extensionMotorLeft.direction = DcMotorSimple.Direction.REVERSE
@@ -145,8 +149,11 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
             extensionMotorRight.power = 0.0
         }
 
-        extensionMotorRight.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
-        extensionMotorLeft.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
+        if (!ManagedMotorGroup.keepEncoderPositions)
+        {
+            extensionMotorRight.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
+            extensionMotorLeft.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
+        }
 
         intakeV4BCoaxial = opMode.hardwareMap.get(ServoImplEx::class.java, "intakeV4BCoaxial")
         intakeV4BCoaxial.position = CoaxialState.Rest.position

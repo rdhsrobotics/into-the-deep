@@ -35,8 +35,16 @@ abstract class FiveSampleAutonomous(
         FieldWaypoint(Pose(-70.0, -35.0, (180.0).degrees), 10.0)
     )
 
-    //-81.55 4.67 -0.012
-    var wasAbleToInitiateOuttake = false
+    val toAbortedPark = listOf(
+        FieldWaypoint(
+            Pose((opMode.robot as HypnoticAutoRobot).activeX.toDouble(), 0.0, 0.0),
+            25.0
+        ),
+        FieldWaypoint(Pose(-70.0, 13.0, (0.0).degrees), 25.0),
+        FieldWaypoint(Pose(-70.0, 10.0, (180.0).degrees), 25.0),
+        FieldWaypoint(Pose(-70.0, -35.0, (180.0).degrees), 10.0)
+    )
+
     val toSubmersible = listOf(
         FieldWaypoint(depositHighBucket, 25.0),
         FieldWaypoint(Pose(-80.0, 20.0, 0.0), 20.0),
@@ -64,8 +72,8 @@ abstract class FiveSampleAutonomous(
         FieldWaypoint(Pose(-52.1, 20.0, 10.0), 25.0),
         FieldWaypoint(depositHighBucket.add(Pose(-20.0, -20.0, 0.0)), 25.0),
         FieldWaypoint(depositHighBucket.add(Pose(-15.0, -15.0, 0.0)), 20.0),
-        FieldWaypoint(depositHighBucket.add(Pose(-10.0, -3.0, 0.0)), 10.0),
-        FieldWaypoint(depositHighBucket, 3.0),
+        FieldWaypoint(depositHighBucket.add(Pose(-10.0, -3.0, 0.0)), 15.0),
+        FieldWaypoint(depositHighBucket.add(Pose(5.0, 5.0)), 10.0),
     )
 
     fun submersibleCycle() {
@@ -80,7 +88,21 @@ abstract class FiveSampleAutonomous(
 
         visionIntake(opMode)
 
-        single("Return to basket") {
+        single("Return to basket or park") {
+            if (this["abortMission"] != null) {
+                if (opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Rest)) {
+                    opMode.robot.intakeComposite
+                        .initialOuttakeFromRest(
+                            OuttakeLevel.Bar2,
+                            shouldEnterPreDepositIfAvailable = false
+                        )
+                }
+
+                navigateTo(Pose(-82.0, 0.0, 180.0.degrees))
+                navigateTo(Pose(-82.0, -25.0, 180.0.degrees))
+                return@single
+            }
+
             visionPipeline.pause()
             purePursuitNavigateTo(*toBasket.toTypedArray()) {
                 withAutomaticDeath(10000.0)
@@ -103,18 +125,20 @@ abstract class FiveSampleAutonomous(
             visionPipeline.pause()
             if (initial) {
                 opMode.robot.intakeComposite
-                    .initialOuttakeFromRest(OuttakeLevel.SomethingLikeThat)
+                    .initialOuttakeFromRest(OuttakeLevel.HighBasket)
             } else {
                 opMode.robot.intakeComposite
                     .confirmAndTransferAndReady()
                     .thenComposeAsync {
                         opMode.robot.intakeComposite
-                            .initialOuttake(OuttakeLevel.SomethingLikeThat)
+                            .initialOuttake(OuttakeLevel.HighBasket)
                     }
             }
 
             navigateTo(depositHighBucket) {
                 withCustomHeadingTolerance(2.0)
+                withCustomTranslationalTolerance(1.5)
+                withExtendoOut(true)
             }
 
             if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Outtaking)) {
@@ -140,7 +164,7 @@ abstract class FiveSampleAutonomous(
 
             navigateTo(position.pose) {
                 withExtendoOut(true)
-                withAutomaticDeath(if (position.extendoMode) 8000.0 else 5000.0)
+                withAutomaticDeath(if (position.extendoMode) 7000.0 else 5000.0)
                 withCustomHeadingTolerance(0.8)
                 withCustomTranslationalTolerance(0.7)
             }
@@ -164,10 +188,10 @@ abstract class FiveSampleAutonomous(
     depositToHighBasket(initial = true)
 
     val pickupPositions = listOf(
-        GroundPickupPosition(pose = Pose(-11.5, 17.75, (90.5).degrees)),
+        GroundPickupPosition(pose = Pose(-11.5, 18.5, (90.0).degrees)),
         GroundPickupPosition(pose = Pose(-11.5, 34.75, (90.0).degrees)),
         GroundPickupPosition(
-            pose = Pose(-44.7, 4.5, (180).degrees),
+            pose = Pose(-45.5, 4.5, (180).degrees),
             extendoMode = true,
             wristState = WristState.Perpendicular
         ),

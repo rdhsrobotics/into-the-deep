@@ -3,10 +3,8 @@ package org.riverdell.robotics.subsystems.slides
 import com.acmerobotics.roadrunner.control.PIDCoefficients
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
 import org.riverdell.robotics.HypnoticRobot
-import org.riverdell.robotics.autonomous.movement.cubicBezier
 import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
 import org.riverdell.robotics.utilities.managed.pidf.PIDFConfig
-import kotlin.math.abs
 
 class Lift(val robot: HypnoticRobot) : AbstractSubsystem()
 {
@@ -15,18 +13,23 @@ class Lift(val robot: HypnoticRobot) : AbstractSubsystem()
             this@Lift,
             PIDCoefficients(kP, kI, kD),
             kV, kA, kStatic,
-            tolerance = 15,
+            tolerance = 7,
             kF = { position, targetPosition, velocity ->
                 val error = position - targetPosition
-                if (targetPosition > 90.0) // If going up, always resist gravity
+                if (targetPosition > 50.0) // If going up, resist gravity
                 {
-                    0.28
-                } else { // If going near 0, give extra push down
-                    if (error > -15 && error < 50) // When elevator is just above the target position
-                    {
-                        (0.05 * error * abs(error)).coerceIn(-0.35, 0.35)
+                    if (error > -40 && error < -2) { // If a little below, push up
+                        if ((velocity ?: 0.0) > 10.0) { LiftConfig.f_g + 0.4 }
+                        else { LiftConfig.f_g }
                     } else {
-                        0.0 // Don't pull down when very far from target
+                        LiftConfig.f_g
+                    }
+                } else { // If going near 0, give extra push down
+                    if (error > 4 && error < 30) // When elevator is just above the target position
+                    {
+                        /*(0.03 * error * abs(error)).coerceIn(-0.35, 0.35)*/ - 0.3
+                    } else {
+                        0.0 // Don't pull down when very far or at target
                     }
                 }
             },
@@ -42,6 +45,14 @@ class Lift(val robot: HypnoticRobot) : AbstractSubsystem()
     override fun start()
     {
 //        extendToAndStayAt(0)
+    }
+
+    fun asyncPeriodic() {
+        super.periodic()
+    }
+
+    override fun periodic() {
+
     }
 
     override fun doInitialize()

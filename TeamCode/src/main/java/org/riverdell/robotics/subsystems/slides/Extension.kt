@@ -47,4 +47,12 @@ class Extension(val robot: HypnoticRobot) : AbstractSubsystem()
 
     }
 
+    fun asyncPeriodic() {
+        super.periodic()
+    }
+
+    override fun periodic() {
+
+    }
+
 }

@@ -185,8 +185,6 @@ public class PositionChangeAction {
         xPower = Range.clip(xPower, -maxTranslationalPower, maxTranslationalPower);
         yPower = Range.clip(yPower, -maxTranslationalPower, maxTranslationalPower);
 
-        updateTelemetry(imuLatencyNanos, robotHeading);
-
         return new Pose(xPower, yPower, hPower);
     }
 

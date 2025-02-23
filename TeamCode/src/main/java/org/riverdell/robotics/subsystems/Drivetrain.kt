@@ -6,15 +6,9 @@ import com.arcrobotics.ftclib.hardware.motors.Motor
 import com.qualcomm.robotcore.hardware.DcMotor
 import com.qualcomm.robotcore.hardware.DcMotorSimple
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles
 import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.autonomous.movement.localization.TwoWheelLocalizer
-import java.lang.Math.pow
-import kotlin.math.pow
-import kotlin.math.sign
-import kotlin.math.sqrt
 
 class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
 {
@@ -28,18 +22,10 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
     private lateinit var backingDriveBase: MecanumDrive
 
     fun voltage() = kotlin.runCatching { voltageState.current() }.getOrElse { 12.0 }
-    fun imu() = robot.imuProxy.alternativeImu()
-    //fun alternativeImu() = robot.imuProxy.imu()
+    fun imu() = robot.imuProxy.imu()
 
     fun driveRobotCentric(driverOp: GamepadEx, scaleFactor: Double)
     {
-/*        backingDriveBase.driveRobotCentric(
-            -sqrt(driverOp.leftX) * scaleFactor,
-            -sqrt(driverOp.leftY) * scaleFactor,
-             -1 * driverOp.rightX.sign * driverOp.rightX.pow(2.0) * scaleFactor,
-            false
-        )*/
-
         backingDriveBase.driveRobotCentric(
             -driverOp.leftX * scaleFactor,
             -driverOp.leftY * scaleFactor,

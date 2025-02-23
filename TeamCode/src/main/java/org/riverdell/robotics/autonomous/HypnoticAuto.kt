@@ -3,6 +3,7 @@ package org.riverdell.robotics.autonomous
 import io.liftgate.robotics.mono.Mono
 import io.liftgate.robotics.mono.pipeline.RootExecutionGroup
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 import org.riverdell.robotics.HypnoticOpMode
 import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.autonomous.detection.SampleType
@@ -86,7 +87,7 @@ abstract class HypnoticAuto(
                 )
                 multipleTelemetry.addData(
                     "Heading",
-                    Math.toDegrees(robot.imuProxy.alternativeImu().yaw.degrees)
+                    robot.imuProxy.imu().getYaw(AngleUnit.DEGREES)
                 )
                 multipleTelemetry.addData(
                     "Something like that",
@@ -110,19 +111,19 @@ abstract class HypnoticAuto(
 
         override fun opModeStart() {
             thread { // IMU thread
-                while (!isStopRequested) {
+                while (opModeIsActive()) {
                     imuProxy.allPeriodic()
                 }
             }
 
             thread {
-                while (!isStopRequested) { // localizer thread
+                while (opModeIsActive()) { // localizer thread
                     drivetrain.localizer.update()
                 }
             }
 
             thread { // motor power setter thread
-                while (!isStopRequested) {
+                while (opModeIsActive()) {
                     updateLock.withLock {
                         if (nextUpdates != null) {
                             if (previousUpdate != null) {
@@ -139,7 +140,7 @@ abstract class HypnoticAuto(
             }
 
             thread { // subsystems thread
-                while (!isStopRequested) {
+                while (opModeIsActive()) {
                     kotlin.runCatching {
                         runPeriodics()
                     }.onFailure {
@@ -174,7 +175,7 @@ abstract class HypnoticAuto(
                 Thread.sleep(50L)
             }
 
-            if (operatingThreadFinishedProperly) {
+            if (!operatingThreadFinishedProperly) {
                 operatingThread.interrupt()
             }
         }

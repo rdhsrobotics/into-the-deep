@@ -19,6 +19,7 @@ import org.riverdell.robotics.subsystems.intake.composite.CompositeInteraction
 import org.riverdell.robotics.subsystems.intake.v4b.IntakeV4B
 import org.riverdell.robotics.subsystems.outtake.Outtake
 import org.riverdell.robotics.teleop.HypnoticTeleOp
+import kotlin.concurrent.thread
 
 abstract class HypnoticRobot(val opMode: HypnoticOpMode) : System
 {
@@ -119,7 +120,15 @@ abstract class HypnoticRobot(val opMode: HypnoticOpMode) : System
         opMode.waitForStart()
         if (opMode.isStopRequested)
         {
+            disposeOfAll()
             return
+        }
+
+        thread {
+            while (!opMode.isStopRequested) {
+                extension.asyncPeriodic()
+                lift.asyncPeriodic()
+            }
         }
 
         startAll()

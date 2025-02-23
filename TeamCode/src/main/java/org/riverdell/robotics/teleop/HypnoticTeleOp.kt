@@ -8,6 +8,8 @@ import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.intake.composite.IntakeConfig
 import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
@@ -43,7 +45,32 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
 
             if (ManagedMotorGroup.keepEncoderPositions)
             {
-                lift.extendToAndStayAt(0).join()
+                lift.extendToAndStayAt(0)
+                    .thenRun {
+                        lift.slides.idle()
+                    }
+                    .join()
+            }
+
+            /**
+             * Safety feature to prevent samples getting stuck in
+             * an unwanted area after autonomous
+             */
+            val executor = Executors.newSingleThreadScheduledExecutor()
+            executor.execute {
+                intakeComposite.state = InteractionCompositeState.InProgress
+                outtake.depositRotation().join()
+                outtake.depositCoaxial().join()
+
+                Thread.sleep(250L)
+                outtake.openClaw()
+                Thread.sleep(150L)
+
+                outtake.readyCoaxial()
+                outtake.readyRotation()
+                outtake.closeClaw()
+
+                intakeComposite.state = InteractionCompositeState.Rest
             }
 
             var loopTime: Long
@@ -105,6 +132,8 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                 multipleTelemetry.addEssentialLines()
                 multipleTelemetry.update()
             }
+
+            executor.shutdownNow()
         }
 
         private fun buildCommands() {
@@ -208,7 +237,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     }
                     .whenPressedOnce()
 
-                where(ButtonType.ButtonY)
+  /*              where(ButtonType.ButtonY)
                     .onlyWhen {
                         intakeComposite.state != InteractionCompositeState.InProgress
                     }
@@ -219,7 +248,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                             intakeComposite.wallOuttakeToSpecimenReady()
                         }
                     }
-                    .whenPressedOnce()
+                    .whenPressedOnce()*/
 
                 where(ButtonType.ButtonX)
                     .onlyWhen {
