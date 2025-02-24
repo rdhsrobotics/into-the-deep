@@ -11,8 +11,11 @@ class IntakeEnabledGetPoseTest : HypnoticAuto(something@{ opMode ->
         opMode.robot.intakeComposite.prepareForPickup(
             WristState.Lateral,
             wideOpen = true,
+            doNotUseAutoMode = true,
             submersibleOverride = 300
         ).join()
+
+        opMode.robot.intake.dynamicWrist(0.6)
 
         while (opMode.opModeIsActive()) {
             opMode.robot.multipleTelemetry.addLine("Localizer: ${

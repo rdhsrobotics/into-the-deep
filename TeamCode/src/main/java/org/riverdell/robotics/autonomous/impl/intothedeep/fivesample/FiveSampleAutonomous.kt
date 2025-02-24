@@ -141,8 +141,14 @@ abstract class FiveSampleAutonomous(
                 position.wristState,
                 // needs to go closer into the wall
                 doNotUseAutoMode = position.extendoMode,
+                submersibleOverride = position.extendoPosition,
                 wideOpen = true,
-            )
+            ).thenAcceptAsync {
+                if (position.dynamicPosition != null)
+                {
+                    opMode.robot.intake.dynamicWrist(position.dynamicPosition!!)
+                }
+            }
 
             navigateTo(position.pose) {
                 withExtendoOut(true)
@@ -173,9 +179,11 @@ abstract class FiveSampleAutonomous(
         GroundPickupPosition(pose = Pose(-11.75, 19.0, (90.0).degrees)),
         GroundPickupPosition(pose = Pose(-11.75, 34.75, (90.0).degrees)),
         GroundPickupPosition(
-            pose = Pose(-45.5, 4.0, (180).degrees),
+            pose = Pose(  -21.37, 24.28, 2.266),
             extendoMode = true,
-            wristState = WristState.Perpendicular
+            wristState = WristState.Lateral,
+            dynamicPosition = 0.6,
+            extendoPosition = 300
         ),
     )
 
