@@ -63,9 +63,12 @@ public class PositionChangeAction {
 
 //        populateDefaults();
 
-        xController = new PIDFController(xP, 0.0, xD, 0);
-        yController = new PIDFController(yP, 0.0, yD, 0);
-        hController = new PIDFController(hP, 0.0, hD, 0);
+        double head = 0.0;
+        double pog = 0.0;
+
+        xController = new PIDFController(xP, 0.0, xD, (ass, penis) -> head - pog);
+        yController = new PIDFController(yP, 0.0, yD, (ass, penis) -> head - pog);
+        hController = new PIDFController(hP, 0.0, hD, (ass, penis) -> head - pog);
     }
 
     private @Nullable PathAlgorithm pathAlgorithm = null;
@@ -179,7 +182,7 @@ public class PositionChangeAction {
             }
 
             Pose powers = getPower(robotPose, targetPose);
-            MecanumTranslations.getPowers(powers).propagate(instance);
+            MecanumTranslations.getPowers(powers, 0.0, 0.0, 0.0).propagate(instance);
         }
     }
 

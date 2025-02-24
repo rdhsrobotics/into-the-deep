@@ -21,6 +21,7 @@ public class MecanumTranslations {
         return -parameters.m * Math.signum(v) * (1 / (parameters.a * parameters.sharpness * Math.pow(v, 4) + 1) + (parameters.F_d * parameters.sharpness * Math.pow(v, 2) - 1) / (parameters.sharpness * Math.pow(v, 2) + 1));
     }
 
+    // brah this is cooked fr no cyap
     public static DrivetrainUpdates getPowers(double strafePower, double straightPower,
                                               double turnPower, double straightVel, double strafeVel, double turnVel) {
 
@@ -30,10 +31,6 @@ public class MecanumTranslations {
         strafePower = Range.clip(input.getX(), -1, 1);
         straightPower = Range.clip(input.getY(), -1, 1);
         turnPower = Range.clip(turnPower, -1, 1);
-
-        straightPower += MecanumTranslations.frictionCompensationFunction(STRAIGHT, straightVel) * STRAIGHT_POWER_BOOST;
-        strafePower += MecanumTranslations.frictionCompensationFunction(STRAFE, strafeVel) * STRAFE_POWER_BOOST;
-        turnPower += MecanumTranslations.frictionCompensationFunction(TURN, turnVel) * TURN_POWER_BOOST;
 
         double[] wheelSpeeds = new double[4];
 
