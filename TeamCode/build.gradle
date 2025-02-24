@@ -62,4 +62,5 @@ dependencies {
 
     api project(":FtcRobotController")
     annotationProcessor files("lib/OpModeAnnotationProcessor.jar")
+    implementation fileTree("sigma")
 }

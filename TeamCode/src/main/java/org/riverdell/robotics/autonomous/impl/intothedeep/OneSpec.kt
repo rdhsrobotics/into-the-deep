@@ -15,14 +15,16 @@ class OneSpec : HypnoticAuto({ robot ->
     single("Usual + Park") {
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
         (OuttakeLevel.lowBar2)
-
-        navigateTo(Pose(0.0, -31.4, 0.degrees)) //Specimen Scoring Line Up
+        Thread.sleep(2000)
+        navigateTo(Pose(0.0, -28.4, 0.degrees)) //Specimen Scoring Line Up
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.bar2)
         (OuttakeLevel.bar2)
-
-        navigateTo(Pose(-21.74, -19.19, 0.degrees)) //Waypoint a little back to avoid hitting bar.
+        Thread.sleep(2000)
+        robot.robot.outtake.setClawState(ClawState.Open)
+        navigateTo(Pose(-21.74, -13.19, 0.degrees)) //Waypoint a little back to avoid hitting bar.
         //robot.robot.outtake.setClawState(ClawState.Closed)
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.rest)
+        robot.robot.outtake.setClawState(ClawState.Closed)
 
         navigateTo(Pose(-36.6, -28.8, 0.degrees))
 
@@ -40,28 +42,28 @@ class OneSpec : HypnoticAuto({ robot ->
 
         navigateTo(Pose(-56.9, -56.2, 0.degrees))
 
-        navigateTo(Pose(-64.3, -62.1, 0.degrees)) //Diagonal Right
+        navigateTo(Pose(-60.3, -59.1, 0.degrees)) //Diagonal Right
 
         navigateTo(Pose(-63.3, -25.4, 0.degrees)) //All the way back and park
 
-        navigateTo(Pose(-63.3, -45.4, 0.degrees))
+//        navigateTo(Pose(-63.3, -45.4, 0.degrees))
+//
+//        navigateTo(Pose(-23.3, -17.0, 0.degrees))
 
-        navigateTo(Pose(-23.3, -17.0, 0.degrees))
 
 
-
-        robot.robot.outtake.setClawState(ClawState.Open)
-        robot.robot.outtake.setPivotState(PivotState.Hover)
-
-        navigateTo(Pose(-33.3, -10.33, 270.degrees))
-        robot.robot.outtake.setClawState(ClawState.Closed)
-
-        robot.robot.outtake.setPivotState(PivotState.PostScore)
-        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
-        (OuttakeLevel.lowBar2)
-        navigateTo(Pose(0.0, -38.4, 0.degrees))
-        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.bar2)
-        (OuttakeLevel.bar2)
+//        robot.robot.outtake.setClawState(ClawState.Open)
+//        robot.robot.outtake.setPivotState(PivotState.Hover)
+//
+//        navigateTo(Pose(-33.3, -10.33, 270.degrees))
+//        robot.robot.outtake.setClawState(ClawState.Closed)
+//
+//        robot.robot.outtake.setPivotState(PivotState.PostScore)
+//        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
+//        (OuttakeLevel.lowBar2)
+//        navigateTo(Pose(0.0, -38.4, 0.degrees))
+//        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.bar2)
+//        (OuttakeLevel.bar2)
 
 
 

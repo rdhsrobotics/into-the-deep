@@ -202,7 +202,7 @@ abstract class HypnoticAuto(
                Thread.sleep(50L)
            }
 
-           if (operatingThreadFinishedProperly)
+           if (!operatingThreadFinishedProperly)
            {
                operatingThread.interrupt()
            }
