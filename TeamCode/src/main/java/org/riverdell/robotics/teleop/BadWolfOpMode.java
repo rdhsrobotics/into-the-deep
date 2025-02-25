@@ -170,14 +170,14 @@ public class BadWolfOpMode extends LinearOpMode {
 
             if (gamepad1.y || gamepad2.y) {
                 // Move servos to specific positions. This is the hover point
-                pivotRight.setPosition(0.43);//real low to hover. Make higher to hover higher and make lower to hover lower
-                pivotLeft.setPosition(0.57);//these two numbers should always add up to hundred. otherwise u are breaking the servos
+                pivotRight.setPosition(0.40);//real low to hover. Make higher to hover higher and make lower to hover lower
+                pivotLeft.setPosition(0.60);//these two numbers should always add up to hundred. otherwise u are breaking the servos
             }
 
             if (gamepad1.x || gamepad2.x) {
                 // Check if servos are in the correct positions for to perform a grab
                 //so if y is pressed and then x is pressed it performs a grab.
-                if (pivotRight.getPosition() == 0.43 && pivotLeft.getPosition() == 0.57) {
+                if (pivotRight.getPosition() == 0.40 && pivotLeft.getPosition() == 0.60) {
                     performGrab();
                 }
             }

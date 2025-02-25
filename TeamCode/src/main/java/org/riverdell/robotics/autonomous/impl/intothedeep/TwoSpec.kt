@@ -21,7 +21,7 @@ class TwoSpec : HypnoticAuto({ robot ->
         (OuttakeLevel.bar2)
         Thread.sleep(2000)
         robot.robot.outtake.setClawState(ClawState.Open)
-        navigateTo(Pose(-21.74, -13.19, 0.degrees)) //Waypoint a little back to avoid hitting bar.
+        navigateTo(Pose(-21.74, -13.19, 0.degrees))
         //robot.robot.outtake.setClawState(ClawState.Closed)
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.rest)
         robot.robot.outtake.setClawState(ClawState.Closed)
@@ -50,12 +50,14 @@ class TwoSpec : HypnoticAuto({ robot ->
 
         navigateTo(Pose(-23.3, -17.0, 0.degrees))*/
 
+
+
         navigateTo(Pose(-30.0, 2.0, 270.degrees))
         robot.robot.outtake.setClawState(ClawState.Open)
         robot.robot.outtake.setPivotState(PivotState.PreHover)
         Thread.sleep(1000)
         navigateTo(Pose(-35.0, 2.0, 270.degrees))
-        robot.robot.outtake.setPivotState(PivotState.Hover)
+        robot.robot.outtake.setPivotState(PivotState.Pickup)
         Thread.sleep(1000)
         robot.robot.outtake.setClawState(ClawState.Closed)
         Thread.sleep(1000)
