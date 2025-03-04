@@ -10,7 +10,6 @@ import io.liftgate.robotics.mono.subsystem.System
 import org.firstinspires.ftc.robotcore.external.Telemetry
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.subsystems.Drivetrain
-import org.riverdell.robotics.subsystems.IMUProxySubsystem
 import org.riverdell.robotics.subsystems.hang.Hang
 import org.riverdell.robotics.subsystems.slides.Extension
 import org.riverdell.robotics.subsystems.slides.Lift
@@ -44,8 +43,6 @@ abstract class HypnoticRobot(val opMode: HypnoticOpMode) : System
     val lift by lazy { Lift(this) }
     val hang by lazy { Hang(this) }
     val outtake by lazy { Outtake(this) }
-
-    val imuProxy by lazy { IMUProxySubsystem(opMode) }
 
     val multipleTelemetry by lazy {
         MultipleTelemetry(
@@ -101,11 +98,6 @@ abstract class HypnoticRobot(val opMode: HypnoticOpMode) : System
             drivetrain, intake, intakeV4B, outtake, extension, lift,
             *additionalSubSystems().toTypedArray()
         )
-
-        if (this is HypnoticTeleOp.TeleOpRobot)
-        {
-            register(imuProxy)
-        }
 
         // keep all log entries
         Mono.logSink = {

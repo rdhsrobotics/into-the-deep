@@ -3,14 +3,12 @@ package org.riverdell.robotics.autonomous
 import io.liftgate.robotics.mono.Mono
 import io.liftgate.robotics.mono.pipeline.RootExecutionGroup
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
 import org.riverdell.robotics.HypnoticOpMode
 import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.autonomous.detection.SampleType
 import org.riverdell.robotics.autonomous.detection.VisionPipeline
 import org.riverdell.robotics.autonomous.movement.DrivetrainUpdates
 import org.riverdell.robotics.autonomous.movement.PositionChangeAction
-import org.riverdell.robotics.autonomous.movement.degrees
 import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
@@ -64,11 +62,9 @@ abstract class HypnoticAuto(
                 runPeriodics()
                 onInit(this)
 
-                imuProxy.allPeriodic()
-                drivetrain.localizer.update()
+                hardware.pinpoint.update()
 
                 multipleTelemetry.addLine("--- Initialization ---")
-
                 multipleTelemetry.addData(
                     "X Position Error",
                     0.0
@@ -86,13 +82,10 @@ abstract class HypnoticAuto(
                     0.0
                 )
                 multipleTelemetry.addData(
-                    "Heading",
-                    robot.imuProxy.imu().getYaw(AngleUnit.DEGREES)
+                    "Heading Error",
+                    0.0
                 )
-                multipleTelemetry.addData(
-                    "Something like that",
-                    robot.drivetrain.localizer.pose
-                )
+
                 multipleTelemetry.addData(
                     "Heading Velocity Error",
                     0.0
@@ -101,24 +94,14 @@ abstract class HypnoticAuto(
                     "Period Milliseconds",
                     0.0
                 )
-                multipleTelemetry.addData(
-                    "IMU Latency ms",
-                    (System.nanoTime() - robot.drivetrain.imu().acquisitionTime) / 1E6
-                )
                 multipleTelemetry.update()
             }
         }
 
         override fun opModeStart() {
-            thread { // IMU thread
-                while (opModeIsActive()) {
-                    imuProxy.allPeriodic()
-                }
-            }
-
             thread {
                 while (opModeIsActive()) { // localizer thread
-                    drivetrain.localizer.update()
+                    hardware.pinpoint.update()
                 }
             }
 

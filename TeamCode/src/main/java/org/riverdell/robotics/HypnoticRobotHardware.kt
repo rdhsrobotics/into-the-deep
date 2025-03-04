@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx
 import com.qualcomm.robotcore.hardware.DcMotorSimple
 import com.qualcomm.robotcore.hardware.IMU
 import com.qualcomm.robotcore.hardware.ServoImplEx
+import org.firstinspires.ftc.robotcontroller.internal.localization.GoBildaPinpointDriver
 import org.riverdell.robotics.subsystems.intake.IntakeState
 import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.intake.v4b.CoaxialState
@@ -29,6 +30,8 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
     lateinit var frontLeft: DcMotorEx
     lateinit var backRight: DcMotorEx
     lateinit var backLeft: DcMotorEx
+
+    lateinit var pinpoint: GoBildaPinpointDriver
 
     lateinit var bnoIMU: IMU
     lateinit var bhiIMU: IMU
@@ -65,6 +68,11 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
 //            )
 //        )
 //        imu.resetYaw()
+
+        pinpoint = opMode.hardwareMap.get(
+            GoBildaPinpointDriver::class.java,
+            "pinpoint"
+        )
 
         bhiIMU = opMode.hardwareMap["lol"] as IMU
         bhiIMU.initialize(

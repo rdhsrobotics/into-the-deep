@@ -5,12 +5,16 @@ import com.qualcomm.robotcore.hardware.PIDCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.riverdell.robotics.autonomous.HypnoticAuto;
 import org.riverdell.robotics.autonomous.movement.geometry.Point;
 import org.riverdell.robotics.autonomous.movement.geometry.Pose;
-import org.riverdell.robotics.autonomous.movement.localization.TwoWheelLocalizer;
+import org.riverdell.robotics.autonomous.movement.geometry.RawPose;
+import org.firstinspires.ftc.robotcontroller.internal.localization.GoBildaPinpointDriver;
 
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,9 +31,9 @@ public class PositionChangeAction {
     private final HypnoticAuto instance;
     private final RootExecutionGroup executionGroup;
 
-    public static PIDCoefficients strafePID = new PIDCoefficients(0.18, 0.0, 0.024);
-    public static PIDCoefficients straightPID = new PIDCoefficients(0.077, 0.0, 0.013);
-    public static PIDCoefficients headingPID = new PIDCoefficients(1.1, 0.0, -0.125);
+    public static PIDCoefficients strafePID = new PIDCoefficients(0.25, 0.0, 0.00105);
+    public static PIDCoefficients straightPID = new PIDCoefficients(0.21, 0.0, 0.0013);
+    public static PIDCoefficients headingPID = new PIDCoefficients(1.4, 0.0, -0.125);
 
     public static PIDCoefficients extendoOutHeadingPID = new PIDCoefficients(1.08, 0.0, -0.19);
 
@@ -41,11 +45,7 @@ public class PositionChangeAction {
     public static double TURN_PREDICTION_VELOCITY = 0;
     public static double TURN_MAX_VELOCITY = 5;
 
-    public double maxTranslationalError = 1.1;
-    public double maxHeadingErrorRad = 1.4 * Math.PI / 180;
-    public double maxTranslationalVelocity = 2.5;
-    public double maxHeadingVelocity = 15;
-    private final double atTargetMillis = 50;
+    private PositionChangeTolerance tolerances = new PositionChangeTolerance();
 
     public PIDFController strafeController;
     public PIDFController straightController;
@@ -71,10 +71,9 @@ public class PositionChangeAction {
     private double periodNanos = 0.0;
     private double prevTime = 0.0;
     private @Nullable Pose previousPose = null;
-    private Pose velocity = new Pose();
-    private double translatePosAcquisitionTime = System.nanoTime();
-    private double headingAcquisitionTime = System.nanoTime();
-    private double currentTimeNanos = System.nanoTime();
+
+    private boolean telemetry = true;
+    private boolean doNothing = false;
 
     public PositionChangeAction(@Nullable Pose targetPose, @NotNull RootExecutionGroup executionGroup) {
         this.instance = HypnoticAuto.getInstance();
@@ -85,21 +84,16 @@ public class PositionChangeAction {
         straightController = new PIDFController(straightPID, (current, target, vel) -> 0.0);
         hController = new PIDFController(headingPID, (current, target, vel) -> 0.0);
 
-        strafeController.setTolerance(maxTranslationalError, maxTranslationalVelocity);
-        straightController.setTolerance(maxTranslationalError, maxTranslationalVelocity);
-        hController.setTolerance(maxHeadingErrorRad, maxHeadingVelocity);
+        strafeController.setTolerance(tolerances.translateTolerance, tolerances.translateToleranceVel);
+        straightController.setTolerance(tolerances.translateTolerance, tolerances.translateToleranceVel);
+        hController.setTolerance(tolerances.headingToleranceRad, tolerances.headingToleranceVel);
     }
 
     private @Nullable PathAlgorithm pathAlgorithm = null;
     private @Nullable Function1<PositionChangeActionEndResult, Unit> endSubscription = null;
-
     public void executeBlocking() {
-        executeBlocking(false);
-    }
-
-    public void executeBlocking(boolean test) {
         while (true) {
-            currentTimeNanos = System.nanoTime();
+            double currentTimeNanos = System.nanoTime();
 
             if (prevTime == 0) { prevTime = System.nanoTime(); }
             periodNanos = currentTimeNanos - prevTime;
@@ -111,37 +105,33 @@ public class PositionChangeAction {
                 return;
             }
 
-            Pose robotPose = instance.getRobot().getDrivetrain().getLocalizer().getPose();
+
+            GoBildaPinpointDriver pinpointDriver = instance.getRobot().getHardware().getPinpoint();
+            Pose2D pinpointPose = pinpointDriver.getPosition();
+
+            Pose robotPose = new Pose(
+                    pinpointPose.getX(DistanceUnit.INCH),
+                    pinpointPose.getY(DistanceUnit.INCH),
+                    pinpointPose.getHeading(AngleUnit.RADIANS)
+            );
+
+            RawPose velocity = new RawPose(
+                    pinpointDriver.getVelocity().getX(DistanceUnit.INCH),
+                    pinpointDriver.getVelocity().getY(DistanceUnit.INCH),
+                    pinpointDriver.getHeadingVelocity()
+            );
+
             if (previousPose == null) { previousPose = robotPose; }
-
-            if (Math.abs(translatePosAcquisitionTime - TwoWheelLocalizer.translateAcquisitionTime) > 10) {
-                double translatePosPeriod = Math.max( 1.0 / 1E3, (TwoWheelLocalizer.translateAcquisitionTime - translatePosAcquisitionTime) / 1E9);
-                double deltaX = robotPose.x - previousPose.x;
-                double deltaY = robotPose.y - previousPose.y;
-                velocity.x = deltaX / translatePosPeriod;
-                velocity.y = deltaY / translatePosPeriod;
-                previousPose.x = robotPose.x;
-                previousPose.y = robotPose.y;
-                translatePosAcquisitionTime = TwoWheelLocalizer.translateAcquisitionTime;
-            }
-
-            double newHeadingAcquisitionTime = instance.getRobot().getDrivetrain().imu().getAcquisitionTime();
-            if (Math.abs(headingAcquisitionTime - newHeadingAcquisitionTime) > 10) { // I2C register only updates at 100 Hz max
-                double headingPeriod = Math.max(1.0 / 100, (newHeadingAcquisitionTime - headingAcquisitionTime) / 1E9);
-                double deltaHeading = robotPose.getHeading() - previousPose.getHeading();
-                if (deltaHeading > Math.PI) deltaHeading -= 2 * Math.PI;
-                if (deltaHeading < -Math.PI) deltaHeading += 2 * Math.PI;
-                velocity.setHeading(deltaHeading / headingPeriod);
-                previousPose.setHeading(robotPose.getHeading());
-                headingAcquisitionTime = newHeadingAcquisitionTime;
-            }
 
             Pose targetPose = this.pathAlgorithm == null ? this.targetPose :
                     pathAlgorithm.getTargetCompute().invoke(robotPose);
 
-            assert targetPose != null;
+            if (targetPose == null) {
+                return;
+            }
+
             Pose powers = getPowers(robotPose, targetPose, velocity);
-            if (!test) {
+            if (!doNothing) {
                 HypnoticAuto.setNextUpdates(MecanumTranslations.getPowers(powers,
                         straightController.getVelocityError(),
                         strafeController.getVelocityError(),
@@ -149,8 +139,12 @@ public class PositionChangeAction {
                 ));
             }
 
+            if (telemetry) {
+                updateTelemetry();
+            }
+
             PositionChangeActionEndResult result = getState(robotPose, targetPose, velocity);
-            if (result != null && !test) {
+            if (result != null && !doNothing) {
                 finish(result);
                 return;
             }
@@ -162,17 +156,22 @@ public class PositionChangeAction {
         return headingMeasurement + Range.clip(TURN_PREDICTION_VELOCITY * estimatedVelocity * imuLatencyNanos / 1E9, -TURN_MAX_VELOCITY, TURN_MAX_VELOCITY);
     }
 
-    public @NotNull Pose getPowers(@NotNull Pose robotPose, @NotNull Pose targetPose, Pose velocity) {
+    public double wrapAround(double in) {
+        if (in > Math.PI) in -= 2 * Math.PI;
+        if (in < -Math.PI) in += 2 * Math.PI;
+        return in;
+    }
+
+    public @NotNull Pose getPowers(@NotNull Pose robotPose, @NotNull Pose targetPose,
+                                   RawPose velocity) {
         double targetHeading = targetPose.getHeading();
-        double imuLatencyNanos = currentTimeNanos - headingAcquisitionTime;
         double robotHeading = robotPose.getHeading();
         double headingError = targetHeading - robotHeading;
 
-        if (headingError > Math.PI) headingError -= 2 * Math.PI;
-        if (headingError < -Math.PI) headingError += 2 * Math.PI;
+        headingError = wrapAround(headingError);
 
-        Point robotCentricTranslationalError = targetPose.subtract(robotPose).rotate(-robotHeading - Math.PI / 2);
-        Point robotCentricTranslationalVelocity = velocity.rotate(-robotHeading - Math.PI / 2);
+        Point robotCentricTranslationalError = targetPose.subtract(robotPose).rotate(robotHeading - Math.PI);
+        Point robotCentricTranslationalVelocity = velocity.rotate(robotHeading - Math.PI);
 
         double xPower = strafeController.calculate(
                 robotCentricTranslationalError.x, 0, robotCentricTranslationalVelocity.x);
@@ -188,7 +187,7 @@ public class PositionChangeAction {
         return new Pose(xPower, yPower, hPower);
     }
 
-    public void updateTelemetry(double imuLatencyNanos, double robotHeading) {
+    public void updateTelemetry() {
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "X Position Error",
                 strafeController.getPositionError()
@@ -206,7 +205,7 @@ public class PositionChangeAction {
                 straightController.getVelocityError()
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
-                "Heading",
+                "Heading Error",
                 Math.toDegrees(hController.getPositionError())
         );
         this.instance.getRobot().getMultipleTelemetry().addData(
@@ -216,10 +215,6 @@ public class PositionChangeAction {
         this.instance.getRobot().getMultipleTelemetry().addData(
                 "Period Milliseconds",
                 periodNanos / 1E6
-        );
-        this.instance.getRobot().getMultipleTelemetry().addData(
-                "IMU Latency ms",
-                imuLatencyNanos / 1E6
         );
         this.instance.getRobot().getMultipleTelemetry().update();
     }
@@ -231,7 +226,7 @@ public class PositionChangeAction {
         this.robotStuckProtection = stuckProtection;
     }
 
-    private @Nullable PositionChangeActionEndResult getState(Pose currentPose, Pose targetPose, Pose velocity) {
+    private @Nullable PositionChangeActionEndResult getState(Pose currentPose, Pose targetPose, RawPose velocity) {
         if (currentPose == null || targetPose == null) {
             return PositionChangeActionEndResult.LocalizationFailure;
         }
@@ -272,7 +267,7 @@ public class PositionChangeAction {
             atTargetTimer.reset();
         }
 
-        if (atTargetTimer.milliseconds() > atTargetMillis) {
+        if (atTargetTimer.milliseconds() > tolerances.atTargetMillis) {
             return PositionChangeActionEndResult.Successful;
         }
 
@@ -343,12 +338,8 @@ public class PositionChangeAction {
         this.maxRotationalPower = maxRotationalSpeed;
     }
 
-    public void withCustomHeadingTolerance(double headingToleranceDeg) {
-        this.maxHeadingErrorRad = headingToleranceDeg * Math.PI / 180;
-    }
-
-    public void withCustomTranslationalTolerance(double translationalTolerance) {
-        this.maxTranslationalError = translationalTolerance;
+    public void withCustomTolerances(PositionChangeTolerance tolerances) {
+        this.tolerances = tolerances;
     }
 
     public void withCustomMaxTranslationalSpeed(double maxTranslationalSpeed) {
@@ -375,6 +366,14 @@ public class PositionChangeAction {
         if (use) {
             withCustomHeadingPID(extendoOutHeadingPID);
         }
+    }
+
+    public void doNothing(boolean use) {
+        doNothing = use;
+    }
+
+    public void printTelemetry(boolean use) {
+        telemetry = use;
     }
 
     public void disableAutomaticDeath() {

@@ -10,14 +10,15 @@ import org.riverdell.robotics.autonomous.movement.navigateTo
 @Autonomous(name = "Test | Movement", group = "Test")
 class TestMovement : HypnoticAuto({ opMode ->
     single("go to position") {
-        val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
-        visionPipeline.pause()
+        (opMode.robot as HypnoticAutoRobot).visionPipeline.pause()
 
         navigateTo(Pose(TestConfig.x, TestConfig.y, TestConfig.turn.degrees)) {
             withAutomaticDeath(
                 TestConfig.automaticDeath
             )
+            withCustomTolerances(TestConfig.positionChangeTolerance)
             withExtendoOut(TestConfig.extendoOut)
+            printTelemetry(true)
         }
     }
 })

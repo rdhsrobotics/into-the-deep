@@ -1,6 +1,5 @@
 package org.riverdell.robotics.subsystems
 
-import com.acmerobotics.roadrunner.geometry.Pose2d
 import com.arcrobotics.ftclib.drivebase.MecanumDrive
 import com.arcrobotics.ftclib.gamepad.GamepadEx
 import com.arcrobotics.ftclib.hardware.motors.Motor
@@ -9,24 +8,17 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple
 import io.liftgate.robotics.mono.subsystem.AbstractSubsystem
 import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.autonomous.HypnoticAuto
-import org.riverdell.robotics.autonomous.movement.localization.TwoWheelLocalizer
+import org.firstinspires.ftc.robotcontroller.internal.localization.GoBildaPinpointDriver
 
-class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
-{
+class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem() {
     private val voltageSensor = robot.opMode.hardwareMap.voltageSensor.first()
     private val voltageState by state(write = { _ -> }, read = { voltageSensor.voltage })
-
-    val localizer by lazy {
-        TwoWheelLocalizer(robot)
-    }
 
     private lateinit var backingDriveBase: MecanumDrive
 
     fun voltage() = kotlin.runCatching { voltageState.current() }.getOrElse { 12.0 }
-    fun imu() = robot.imuProxy.imu()
 
-    fun driveRobotCentric(driverOp: GamepadEx, scaleFactor: Double)
-    {
+    fun driveRobotCentric(driverOp: GamepadEx, scaleFactor: Double) {
         backingDriveBase.driveRobotCentric(
             -driverOp.leftX * scaleFactor,
             -driverOp.leftY * scaleFactor,
@@ -35,19 +27,27 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
         )
     }
 
+    override fun start() {
 
-    override fun start()
-    {
-        localizer.poseEstimate = Pose2d()
     }
 
     /**
      * Initializes both the IMU and all drivebase motors.
      */
-    override fun doInitialize()
-    {
-        if (robot.opMode is HypnoticAuto)
-        {
+    override fun doInitialize() {
+        robot.hardware.pinpoint.let { odo ->
+            odo.setOffsets(0.0, 0.0)
+            odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
+            odo.setEncoderDirections(
+                GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.FORWARD
+            )
+        }
+
+        robot.hardware.pinpoint.recalibrateIMU()
+        robot.hardware.pinpoint.resetPosAndIMU()
+
+        if (robot.opMode is HypnoticAuto) {
             robot.hardware.frontLeft.direction = DcMotorSimple.Direction.FORWARD
             robot.hardware.frontLeft.zeroPowerBehavior = DcMotor.ZeroPowerBehavior.BRAKE
 
@@ -61,14 +61,12 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
             robot.hardware.backRight.zeroPowerBehavior = DcMotor.ZeroPowerBehavior.BRAKE
 
             runWithoutEncoders()
-        } else
-        {
+        } else {
             setupDriveBase()
         }
     }
 
-    fun setupDriveBase()
-    {
+    fun setupDriveBase() {
         val backLeft = Motor(robot.opMode.hardwareMap, "backLeft")
         backLeft.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE)
         val backRight = Motor(robot.opMode.hardwareMap, "backRight")
@@ -92,17 +90,19 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem()
         it.mode = DcMotor.RunMode.RUN_WITHOUT_ENCODER
     }
 
-    private fun configureMotorsToDo(consumer: (DcMotor) -> Unit)
-    {
-        listOf(robot.hardware.backLeft, robot.hardware.frontLeft, robot.hardware.frontRight, robot.hardware.backRight).forEach(consumer::invoke)
+    private fun configureMotorsToDo(consumer: (DcMotor) -> Unit) {
+        listOf(
+            robot.hardware.backLeft,
+            robot.hardware.frontLeft,
+            robot.hardware.frontRight,
+            robot.hardware.backRight
+        ).forEach(consumer::invoke)
     }
 
 
     override fun isCompleted() = true
-    override fun dispose()
-    {
-        if (robot.opMode is HypnoticAuto)
-        {
+    override fun dispose() {
+        if (robot.opMode is HypnoticAuto) {
             stopAndResetMotors()
         }
     }

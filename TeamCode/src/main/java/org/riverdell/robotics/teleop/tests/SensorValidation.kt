@@ -1,5 +1,6 @@
 package org.riverdell.robotics.teleop.tests
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit
@@ -9,6 +10,7 @@ import org.riverdell.robotics.HypnoticRobotHardware
     name = "Sensor Validation",
     group = "Tests"
 )
+@Disabled
 class SensorValidation : LinearOpMode()
 {
     override fun runOpMode()

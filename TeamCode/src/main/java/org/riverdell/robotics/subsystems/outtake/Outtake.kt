@@ -14,12 +14,12 @@ class Outtake(private val robot: HypnoticRobot) : AbstractSubsystem() {
     private val coaxial = motionProfiledServo(
         "outtake_cr",
         robot.hardware.outtakeCoaxial,
-        Constraint.HALF.scale(50.5)
+        Constraint.HALF.scale(100.5)
     )
     private val leftRotation = motionProfiledServo(
         "outtake_lr",
         robot.hardware.outtakeRotationLeft,
-        Constraint.HALF.scale(50.5)
+        Constraint.HALF.scale(100.5)
     )
     private val rightRotation = motionProfiledServo(
         "outtake_rr",

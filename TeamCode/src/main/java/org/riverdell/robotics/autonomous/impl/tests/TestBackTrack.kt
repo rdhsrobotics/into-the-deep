@@ -1,6 +1,7 @@
 package org.riverdell.robotics.autonomous.impl.tests
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
+import com.qualcomm.robotcore.eventloop.opmode.Disabled
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
 import org.riverdell.robotics.autonomous.movement.RobotStuckProtection
@@ -9,6 +10,7 @@ import org.riverdell.robotics.autonomous.movement.navigateToPosition
 import java.util.concurrent.atomic.AtomicInteger
 
 @Autonomous(name = "Test | BackTrack", group = "Test")
+@Disabled
 class TestBackTrack : HypnoticAuto({ _ ->
     navigateToPosition(Pose(0.0, 20.0, 0.degrees))
     navigateToPosition(

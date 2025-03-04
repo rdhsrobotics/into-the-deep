@@ -24,8 +24,8 @@ class PrepareOuttake : LinearOpMode()
 
         while (opModeIsActive())
         {
-            left.position = OuttakePrepareConfig.position
-            right.position = 1.0 - OuttakePrepareConfig.position
+            left.position = 1.0 - OuttakePrepareConfig.position
+            right.position = OuttakePrepareConfig.position
             Thread.sleep(50L)
         }
     }

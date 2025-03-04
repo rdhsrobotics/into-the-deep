@@ -10,11 +10,14 @@ import org.riverdell.robotics.autonomous.movement.geometry.Pose
 class DoNothing : HypnoticAuto({ opMode ->
     single("do nothing") {
         val targetPose = Pose()
-        val positionChangeAction = PositionChangeAction(targetPose, this.parent)
+        val positionChangeAction = PositionChangeAction(targetPose, this.parent).apply {
+            doNothing(true)
+            printTelemetry(true)
+        }
         if (instance.isStopRequested) {
             this.parent.terminateMidExecution()
         }
 
-        positionChangeAction.executeBlocking(true)
+        positionChangeAction.executeBlocking()
     }
 })

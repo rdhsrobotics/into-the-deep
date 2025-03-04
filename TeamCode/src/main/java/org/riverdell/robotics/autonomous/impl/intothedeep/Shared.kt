@@ -3,11 +3,14 @@ package org.riverdell.robotics.autonomous.impl.intothedeep
 import com.qualcomm.robotcore.util.ElapsedTime
 import io.liftgate.robotics.mono.pipeline.RootExecutionGroup
 import io.liftgate.robotics.mono.pipeline.single
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.autonomous.HypnoticAuto.HypnoticAutoRobot
 import org.riverdell.robotics.autonomous.detection.SampleDetectionPipelinePNP
 import org.riverdell.robotics.autonomous.detection.SampleDetectionPipelinePNP.AnalyzedSample
 import org.riverdell.robotics.autonomous.movement.MecanumTranslations
+import org.riverdell.robotics.autonomous.movement.PositionChangeTolerance
 import org.riverdell.robotics.autonomous.movement.geometry.Point
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
 import org.riverdell.robotics.autonomous.movement.navigateTo
@@ -38,7 +41,7 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
                     )
                     .propagate(opMode)
 
-                Thread.sleep(140L)
+                Thread.sleep(200L)
                 MecanumTranslations
                     .getPowers(
                         Pose(0.0, 0.0, 0.0),
@@ -46,9 +49,6 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
                     )
                     .propagate(opMode)
             }
-
-
-            Thread.sleep(1000L)
 
             clock.reset()
             while (detectedSample == null && clock.time() < 68) {
@@ -82,15 +82,19 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
 
             println("Translate: $translate")
 
-            val current = opMode.robot.drivetrain.localizer.pose
-            val target = Pose(current.x + translate.x, current.y + translate.y, current.heading)
-
+            val current = opMode.robot.hardware.pinpoint.position
+            val target = Pose(
+                current.getX(DistanceUnit.INCH) + translate.x,
+                current.getY(DistanceUnit.INCH) + translate.y,
+                current.getHeading(AngleUnit.RADIANS)
+            )
 
             if (abs(translate.x) > 2.0 || abs(translate.y) > 1.5) {
                 navigateTo(target) {
-                    withCustomTranslationalTolerance(1.3)
-                    withCustomHeadingTolerance(2.0)
-                    withAutomaticDeath(1500.0)
+                    withCustomTolerances(PositionChangeTolerance(
+                        translateTolerance = 1.3,
+                        headingToleranceRad = 2.0 * Math.PI / 180))
+                    withAutomaticDeath(1250.0)
                 }
             }
 
