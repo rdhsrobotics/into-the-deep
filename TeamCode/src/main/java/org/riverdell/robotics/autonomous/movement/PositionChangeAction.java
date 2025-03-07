@@ -167,12 +167,12 @@ public class PositionChangeAction {
         double targetHeading = targetPose.getHeading();
         double robotHeading = robotPose.getHeading();
         double headingError = targetHeading - robotHeading;
-
+        
         headingError = wrapAround(headingError);
 
         Point robotCentricTranslationalError = targetPose.subtract(robotPose).rotate(robotHeading - Math.PI);
         Point robotCentricTranslationalVelocity = velocity.rotate(robotHeading - Math.PI);
-
+        
         double xPower = strafeController.calculate(
                 robotCentricTranslationalError.x, 0, robotCentricTranslationalVelocity.x);
         double yPower = straightController.calculate(
@@ -263,15 +263,19 @@ public class PositionChangeAction {
             }
         }
 
-        if (!(strafeController.atSetPoint() && straightController.atSetPoint() && hController.atSetPoint())) {
-            atTargetTimer.reset();
-        }
-
-        if (atTargetTimer.milliseconds() > tolerances.atTargetMillis) {
+        if (checkPosition()) {
             return PositionChangeActionEndResult.Successful;
         }
 
         return null;
+    }
+
+    public void checkPosition() {
+        //TODO
+    }
+
+    public void predictPosition(double current, double velocity double time, double tolerance) {
+        return (Math.abs(current + velocity * time) < tolerance)
     }
 
     protected void finish(@NotNull PositionChangeActionEndResult result) {
