@@ -11,6 +11,8 @@ class PositionChangeTolerance (
     var headingToleranceVel: Double = 25.0,
     @JvmField
     var atTargetMillis: Double = 50.0
+    @JvmField
+    var timeToleranceMs: Double = 100.0
 )
 {
 
