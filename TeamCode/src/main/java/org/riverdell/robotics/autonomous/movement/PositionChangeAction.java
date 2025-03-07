@@ -104,23 +104,22 @@ public class PositionChangeAction {
                 finish(PositionChangeActionEndResult.ForcefulTermination);
                 return;
             }
-
-
+            
             GoBildaPinpointDriver pinpointDriver = instance.getRobot().getHardware().getPinpoint();
             Pose2D pinpointPose = pinpointDriver.getPosition();
-
+            
             Pose robotPose = new Pose(
                     pinpointPose.getX(DistanceUnit.INCH),
                     pinpointPose.getY(DistanceUnit.INCH),
                     pinpointPose.getHeading(AngleUnit.RADIANS)
             );
-
+            
             RawPose velocity = new RawPose(
                     pinpointDriver.getVelocity().getX(DistanceUnit.INCH),
                     pinpointDriver.getVelocity().getY(DistanceUnit.INCH),
                     pinpointDriver.getHeadingVelocity()
             );
-
+            
             if (previousPose == null) { previousPose = robotPose; }
 
             Pose targetPose = this.pathAlgorithm == null ? this.targetPose :
@@ -271,11 +270,11 @@ public class PositionChangeAction {
     }
 
     public void checkPosition() {
-        //TODO
+        return ((withinPosition(robotPose.getX(), velocity.getX()) && withinPosition(robotPose.getY(), velocity.getY())) && withinPosition(robotPose.getHeading(), velocity.getHeading()));
     }
 
-    public void predictPosition(double current, double velocity double time, double tolerance) {
-        return (Math.abs(current + velocity * time) < tolerance)
+    public void withinPosition(double current, double velocity double time, double tolerance) {
+        return (Math.abs(current + velocity * time) < tolerance);
     }
 
     protected void finish(@NotNull PositionChangeActionEndResult result) {
