@@ -168,7 +168,6 @@ public class SampleDetection implements CameraStreamSource, VisionProcessor {
             Point localSampleCenter = new Point((localBoundingBox.x + localBoundingBox.width / 2.0), (localBoundingBox.y + localBoundingBox.height / 2.0));
             double distance = Math.hypot(localSampleCenter.x - FRAME_CENTER_X, localSampleCenter.y - FRAME_CENTER_Y);
             double area = localBoundingBox.area();
-            System.out.println(area);
 
             if (area < MIN_SAMPLE_AREA || distance > minDistance) {
                 continue;

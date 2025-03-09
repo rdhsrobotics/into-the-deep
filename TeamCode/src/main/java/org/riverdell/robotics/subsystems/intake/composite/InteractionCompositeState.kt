@@ -9,6 +9,7 @@ enum class InteractionCompositeState
     OuttakeReady,
     Outtaking,
     SpecimenReady,
+    Hang,
     InProgress
 
 }

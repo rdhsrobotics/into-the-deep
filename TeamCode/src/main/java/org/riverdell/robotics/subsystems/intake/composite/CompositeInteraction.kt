@@ -5,6 +5,8 @@ import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
+import org.riverdell.robotics.subsystems.slides.ExtensionConfig
+import org.riverdell.robotics.subsystems.slides.LiftConfig
 import org.riverdell.robotics.utilities.motionprofile.Constraint
 import java.util.concurrent.CompletableFuture
 
@@ -403,5 +405,15 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         }
 
         return true
+    }
+
+    fun prepareHangSituation() = stateMachineRestrict(
+        InteractionCompositeState.Rest,
+        InteractionCompositeState.Hang
+    ) {
+        intakeV4B.v4bSampleGateway().thenAcceptAsync {
+            Thread.sleep(500L)
+            extension.extendToAndStayAt(400).join()
+        }
     }
 }

@@ -60,25 +60,31 @@ class ManagedMotorGroup(
         read = {
             master.currentPosition
         },
-        complete = { current, target ->
-            val isAtPoint = (abs(target - current) < tolerance)
+        complete = complete@{ current, target ->
+            val isAtPoint = (abs(target - current) <= tolerance)
 
-            isAtPoint || if (stuckProtection == null)
-            {
-                false
-            } else
-            {
+            if (isAtPoint) {
+                return@complete true
+            }
+
+            if (enableStuckProtectionWhenTargetingOut && target - current < 0) {
+                return@complete false
+            }
+
+            if (stuckProtection != null) {
                 val diffs = master.velocity
                 previousPosition = current
 
                 if (diffs > stuckProtection!!.minimumRequiredPositionDifference)
                 {
                     stable = System.currentTimeMillis()
-                    false
+                    return@complete false
                 } else
                 {
-                    System.currentTimeMillis() - stable > stuckProtection!!.timeStuckUnderMinimumMillis
+                    return@complete System.currentTimeMillis() - stable > stuckProtection!!.timeStuckUnderMinimumMillis
                 }
+            } else {
+                return@complete false
             }
         }
     )
@@ -220,6 +226,11 @@ class ManagedMotorGroup(
 
     fun enableStuckProtection(stuckProtection: StuckProtection) = apply {
         this.stuckProtection = stuckProtection
+    }
+
+    var enableStuckProtectionWhenTargetingOut = false
+    fun onlyEnableStuckProtectionWhenTargetingOut() = apply {
+        enableStuckProtectionWhenTargetingOut = true
     }
 
     fun configure(block: PIDFController.() -> Unit) = apply {

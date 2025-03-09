@@ -40,7 +40,7 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem() {
             odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
             odo.setEncoderDirections(
                 GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.FORWARD
+                GoBildaPinpointDriver.EncoderDirection.REVERSED
             )
         }
 

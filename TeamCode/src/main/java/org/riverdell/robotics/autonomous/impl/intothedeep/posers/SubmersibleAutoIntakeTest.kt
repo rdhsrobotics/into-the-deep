@@ -1,4 +1,4 @@
-package org.riverdell.robotics.autonomous.impl.intothedeep.tests
+package org.riverdell.robotics.autonomous.impl.intothedeep.posers
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import org.riverdell.robotics.autonomous.HypnoticAuto

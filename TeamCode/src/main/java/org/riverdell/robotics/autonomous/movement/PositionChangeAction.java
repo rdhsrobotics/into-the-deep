@@ -16,7 +16,6 @@ import org.riverdell.robotics.autonomous.movement.geometry.Pose;
 import org.riverdell.robotics.autonomous.movement.geometry.RawPose;
 import org.firstinspires.ftc.robotcontroller.internal.localization.GoBildaPinpointDriver;
 
-import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.liftgate.robotics.mono.Mono;
@@ -31,19 +30,15 @@ public class PositionChangeAction {
     private final HypnoticAuto instance;
     private final RootExecutionGroup executionGroup;
 
-    public static PIDCoefficients strafePID = new PIDCoefficients(0.25, 0.0, 0.00105);
-    public static PIDCoefficients straightPID = new PIDCoefficients(0.21, 0.0, 0.0013);
+    public static PIDCoefficients strafePID = new PIDCoefficients(0.25, 0.0, 0.02667);
+    public static PIDCoefficients straightPID = new PIDCoefficients(0.21, 0.0, 0.033);
     public static PIDCoefficients headingPID = new PIDCoefficients(1.4, 0.0, -0.125);
 
-    public static PIDCoefficients extendoOutHeadingPID = new PIDCoefficients(1.08, 0.0, -0.19);
+    public static PIDCoefficients extendoOutHeadingPID = new PIDCoefficients(1.3, 0.0, -0.18);
 
     public static double TURN_POWER_BOOST = -0.05;
     public static double STRAFE_POWER_BOOST = 0.045;
     public static double STRAIGHT_POWER_BOOST = 0.03;
-
-    public static double TURN_PREDICTION_ACCELERATION = 0;
-    public static double TURN_PREDICTION_VELOCITY = 0;
-    public static double TURN_MAX_VELOCITY = 5;
 
     private PositionChangeTolerance tolerances = new PositionChangeTolerance();
 
@@ -53,11 +48,6 @@ public class PositionChangeAction {
 
     private final ElapsedTime activeTimer = new ElapsedTime();
     private final ElapsedTime stuckTime = new ElapsedTime();
-    private final ElapsedTime atTargetTimer = new ElapsedTime();
-
-    private final LinkedList<double[]> prevHPowers = new LinkedList<>();
-    private double prevHPower = 0.0;
-
     private final @Nullable Pose targetPose;
 
     /**
@@ -83,10 +73,6 @@ public class PositionChangeAction {
         strafeController = new PIDFController(strafePID, (current, target, vel) -> 0.0);
         straightController = new PIDFController(straightPID, (current, target, vel) -> 0.0);
         hController = new PIDFController(headingPID, (current, target, vel) -> 0.0);
-
-        strafeController.setTolerance(tolerances.translateTolerance, tolerances.translateToleranceVel);
-        straightController.setTolerance(tolerances.translateTolerance, tolerances.translateToleranceVel);
-        hController.setTolerance(tolerances.headingToleranceRad, tolerances.headingToleranceVel);
     }
 
     private @Nullable PathAlgorithm pathAlgorithm = null;
@@ -151,11 +137,6 @@ public class PositionChangeAction {
         }
     }
 
-    public double predictHeading(double lastPeriodMillis, double imuLatencyNanos, double headingMeasurement, double initialHeadingVelocity) {
-        double estimatedVelocity = initialHeadingVelocity + TURN_PREDICTION_ACCELERATION * (instance.robot.getDrivetrain().voltage() * prevHPower - (13.0 / TURN_MAX_VELOCITY) * initialHeadingVelocity) * lastPeriodMillis / 2000;
-        return headingMeasurement + Range.clip(TURN_PREDICTION_VELOCITY * estimatedVelocity * imuLatencyNanos / 1E9, -TURN_MAX_VELOCITY, TURN_MAX_VELOCITY);
-    }
-
     public double wrapAround(double in) {
         if (in > Math.PI) in -= 2 * Math.PI;
         if (in < -Math.PI) in += 2 * Math.PI;
@@ -170,17 +151,16 @@ public class PositionChangeAction {
 
         headingError = wrapAround(headingError);
 
-        Point robotCentricTranslationalError = targetPose.subtract(robotPose).rotate(robotHeading - Math.PI);
-        Point robotCentricTranslationalVelocity = velocity.rotate(robotHeading - Math.PI);
+        Point robotCentricTranslationalError = targetPose.subtract(robotPose).rotate(robotHeading);
+        Point robotCentricTranslationalVelocity = velocity.rotate(robotHeading);
 
         double xPower = strafeController.calculate(
                 robotCentricTranslationalError.x, 0, robotCentricTranslationalVelocity.x);
         double yPower = straightController.calculate(
-                robotCentricTranslationalError.y, 0, robotCentricTranslationalVelocity.y);
+                -robotCentricTranslationalError.y, 0, -robotCentricTranslationalVelocity.y);
         double hPower = hController.calculate(-headingError, 0, velocity.getHeading());
 
         hPower = Range.clip(hPower, -maxRotationalPower, maxRotationalPower);
-        prevHPower = hPower;
         xPower = Range.clip(xPower, -maxTranslationalPower, maxTranslationalPower);
         yPower = Range.clip(yPower, -maxTranslationalPower, maxTranslationalPower);
 
@@ -263,15 +243,27 @@ public class PositionChangeAction {
             }
         }
 
-        if (!(strafeController.atSetPoint() && straightController.atSetPoint() && hController.atSetPoint())) {
-            atTargetTimer.reset();
-        }
+        if (velocity != null) {
+            Pose predictedError = targetPose.subtract(predictPose(currentPose, velocity, tolerances.predictMillis));
 
-        if (atTargetTimer.milliseconds() > tolerances.atTargetMillis) {
-            return PositionChangeActionEndResult.Successful;
+            boolean withinPositionTolerance = ((predictedError.radius() < tolerances.translateTolerance)
+                    && (Math.abs(predictedError.getHeading()) < tolerances.headingToleranceRad));
+
+            boolean withinVelocityTolerance = (velocity.radius() < tolerances.translateToleranceVel) &&
+                    (Math.abs(velocity.getHeading()) < tolerances.headingToleranceVel);
+
+            if (withinPositionTolerance && withinVelocityTolerance) {
+                System.out.println("Ending Movement");
+                return PositionChangeActionEndResult.Successful;
+            }
         }
 
         return null;
+    }
+
+    public Pose predictPose(Pose current, RawPose velocity, double timeMillis) {
+        RawPose delta = velocity.divide(1000.0 / timeMillis);
+        return current.add(new Pose(delta.x, delta.y, delta.getHeading()));
     }
 
     protected void finish(@NotNull PositionChangeActionEndResult result) {

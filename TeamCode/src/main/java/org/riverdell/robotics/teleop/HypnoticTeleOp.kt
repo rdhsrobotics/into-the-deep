@@ -137,6 +137,30 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
         }
 
         private fun buildCommands() {
+            if (!teleOp.solo)
+            {
+                gp1Commands.apply {
+                    where(ButtonType.PlayStationLogo)
+                        .onlyWhen { intakeComposite.state == InteractionCompositeState.Rest }
+                        .triggers {
+                            intakeComposite.prepareHangSituation()
+                        }
+                        .whenPressedOnce()
+
+                    where(ButtonType.ButtonY)
+                        .onlyWhen { intakeComposite.state == InteractionCompositeState.Hang }
+                        .triggers {
+                            teleOp.robot.extension.slides.idle()
+                            teleOp.robot.hardware.extensionMotorLeft.power = -1.0
+                            teleOp.robot.hardware.extensionMotorRight.power = -1.0
+                        }
+                        .andIsHeldUntilReleasedWhere {
+                            teleOp.robot.hardware.extensionMotorLeft.power = 0.0
+                            teleOp.robot.hardware.extensionMotorRight.power = 0.0
+                        }
+                }
+            }
+
             gp2Commands.apply {
                 where(ButtonType.DPadLeft)
                     .onlyWhen { intakeComposite.state == InteractionCompositeState.Pickup }

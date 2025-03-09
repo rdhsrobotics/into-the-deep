@@ -1,6 +1,7 @@
 package org.riverdell.robotics.autonomous.impl.intothedeep.incbuator
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
+import com.qualcomm.robotcore.eventloop.opmode.Disabled
 import io.liftgate.robotics.mono.pipeline.single
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.autonomous.movement.degrees
@@ -9,6 +10,7 @@ import org.riverdell.robotics.autonomous.movement.navigateTo
 import org.riverdell.robotics.autonomous.movement.purepursuit.FieldWaypoint
 import org.riverdell.robotics.subsystems.intake.WristState
 
+@Disabled
 @Autonomous(name = "5 Specimen", group = "Test")
 class `5Spec` : HypnoticAuto({ opMode ->
     fun depositPoseOffsetBy(offset: Double) = Pose(-4.61 - offset, 40.92, 0.000)

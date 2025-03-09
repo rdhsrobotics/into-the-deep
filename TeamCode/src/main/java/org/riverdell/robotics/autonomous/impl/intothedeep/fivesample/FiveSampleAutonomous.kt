@@ -13,6 +13,7 @@ import org.riverdell.robotics.autonomous.impl.intothedeep.visionIntake
 import org.riverdell.robotics.autonomous.movement.PositionChangeTolerance
 import org.riverdell.robotics.autonomous.movement.degrees
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
+import org.riverdell.robotics.autonomous.movement.navigatePurePursuit
 import org.riverdell.robotics.autonomous.movement.navigateTo
 import org.riverdell.robotics.autonomous.movement.purePursuitNavigateTo
 import org.riverdell.robotics.autonomous.movement.purepursuit.ActionWaypoint
@@ -27,10 +28,11 @@ abstract class FiveSampleAutonomous(
     val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
 
     val startPose = Pose2d(0.0, 0.0, 0.degrees)
-    val depositHighBucket = Pose(11.80, 22.08, 48.degrees)
+    val depositHighBucket = Pose(19.5, -5.3, (43.58).degrees)
 
-    val pickupTolerance = PositionChangeTolerance(0.7, 1.5, 0.8 * Math.PI / 180, 10.0)
-    val basketTolerance = PositionChangeTolerance(3.0, 25.0, 2.5 * Math.PI / 180, 35.0, 25.0)
+    val pickupTolerance = PositionChangeTolerance(1.0, 5.0, 0.9 * Math.PI / 180, 5.0, 100.0)
+    val initialBasketTolerance = PositionChangeTolerance(2.5, 15.0, 2.5 * Math.PI / 180, 10.0, 200.0)
+    val basketTolerance = PositionChangeTolerance(2.75, 25.0, 2.5 * Math.PI / 180, 15.0, 200.0)
 
     // TODO
     val parkSubmersible = listOf(
@@ -53,20 +55,26 @@ abstract class FiveSampleAutonomous(
 
             visionPipeline.resume()
         },
-        FieldWaypoint(
-            Pose(25.27, -10.66, 0.degrees),
-            25.0
-        ),
-        FieldWaypoint(
-            Pose(25.27, -10.66, 0.degrees),
-            20.0
-        )
+        FieldWaypoint(Pose(25.27, -10.66, 0.degrees), 25.0),
+        FieldWaypoint(Pose(25.27, -10.66, 0.degrees), 20.0)
     )
 
     val toBasket = listOf(
         FieldWaypoint(Pose(25.27, -10.66, 0.degrees), 30.0),
         FieldWaypoint(Pose(3.97, -5.61, 55.degrees), 30.0),
         FieldWaypoint(depositHighBucket, 15.0),
+    )
+
+    val pickupPositions = listOf(
+        GroundPickupPosition(pose = Pose(18.26, -8.35, 78.34.degrees)),
+        GroundPickupPosition(pose = Pose(21.88, -6.9, 91.76.degrees)),
+        GroundPickupPosition(
+            pose = Pose(17.3, -15.45, 131.71.degrees),
+            extendoMode = true,
+            wristState = WristState.Lateral,
+            dynamicPosition = 0.6,
+            extendoPosition = 250
+        ),
     )
 
     fun submersibleCycle() {
@@ -128,9 +136,14 @@ abstract class FiveSampleAutonomous(
                     }
             }
 
-            navigateTo(depositHighBucket) {
-                withCustomTolerances(basketTolerance)
-                withExtendoOut(true)
+            if (initial) {
+                navigateTo(depositHighBucket) {
+                    withCustomTolerances(initialBasketTolerance)
+                }
+            } else {
+                navigateTo(depositHighBucket) {
+                    withCustomTolerances(basketTolerance)
+                }
             }
 
             if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Outtaking)) {
@@ -138,6 +151,7 @@ abstract class FiveSampleAutonomous(
             }
 
             opMode.robot.intakeComposite.outtakeCompleteAndRest().join()
+
         }
     }
 
@@ -165,6 +179,10 @@ abstract class FiveSampleAutonomous(
                 withAutomaticDeath(if (position.extendoMode) 2500.0 else 3500.0)
                 withCustomTolerances(pickupTolerance)
             }
+
+            if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Pickup)) {
+                return@single
+            }
         }
     }
 
@@ -184,18 +202,6 @@ abstract class FiveSampleAutonomous(
     // preload
     depositToHighBasket(initial = true)
 
-    val pickupPositions = listOf(
-        GroundPickupPosition(pose = Pose(3.44, 8.03, 90.degrees)),
-        GroundPickupPosition(pose =  Pose(13.84, 8.03, 90.degrees)),
-        GroundPickupPosition(
-            pose = Pose(5.65, 13.19, 132.degrees),
-            extendoMode = true,
-            wristState = WristState.Lateral,
-            dynamicPosition = 0.6,
-            extendoPosition = 400
-        ),
-    )
-
     // ground pickup positions
     pickupPositions.forEach {
         prepareForIntake(it)
@@ -203,7 +209,7 @@ abstract class FiveSampleAutonomous(
         depositToHighBasket()
     }
 
-    submersibleCycle()
+    /*submersibleCycle()
 
     single("park near submersible") {
         if (this["abortMission"] == null)
@@ -221,7 +227,7 @@ abstract class FiveSampleAutonomous(
                 withCustomMaxRotationalSpeed(0.5)
             }
         }
-    }
+    }*/
 }, {
     if (instance.gamepad1.right_trigger > 0.1) {
         it.activeX -= (it.opMode.gamepad1.right_trigger * 0.5).toInt()
