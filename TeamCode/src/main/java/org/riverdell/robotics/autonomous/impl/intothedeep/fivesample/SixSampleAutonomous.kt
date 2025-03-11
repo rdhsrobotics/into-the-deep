@@ -13,61 +13,40 @@ import org.riverdell.robotics.autonomous.impl.intothedeep.visionIntake
 import org.riverdell.robotics.autonomous.movement.PositionChangeTolerance
 import org.riverdell.robotics.autonomous.movement.degrees
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
-import org.riverdell.robotics.autonomous.movement.navigatePurePursuit
 import org.riverdell.robotics.autonomous.movement.navigateTo
-import org.riverdell.robotics.autonomous.movement.purePursuitNavigateTo
-import org.riverdell.robotics.autonomous.movement.purepursuit.ActionWaypoint
-import org.riverdell.robotics.autonomous.movement.purepursuit.FieldWaypoint
 import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 
-abstract class FiveSampleAutonomous(
+abstract class SixSampleAutonomous(
     sampleType: SampleType
 ) : HypnoticAuto(sampleType, { opMode ->
     val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
 
     val startPose = Pose2d(0.0, 0.0, 0.degrees)
-    val depositHighBucket = Pose(19.5, -5.3, (43.58).degrees)
+    val depositHighBucket = Pose(18.83, -6.06, (43.26).degrees)
+    val depositHighBucketFinal = Pose(17.0, -5.8, (43.26).degrees)
 
-    val pickupTolerance = PositionChangeTolerance(1.0, 5.0, 0.9 * Math.PI / 180, 5.0, 100.0)
-    val initialBasketTolerance = PositionChangeTolerance(2.5, 15.0, 2.5 * Math.PI / 180, 10.0, 200.0)
-    val basketTolerance = PositionChangeTolerance(2.75, 25.0, 2.5 * Math.PI / 180, 15.0, 200.0)
+    val submersibleInitialPose = Pose(-3.0, -52.0, 0.degrees)
+    val submersibleInitialPoseSecondCycle = Pose(-3.0, -55.0, 0.degrees)
 
-    // TODO
-    val parkSubmersible = listOf(
-        FieldWaypoint(depositHighBucket, 30.0),
-        FieldWaypoint(Pose(-70.0, 13.0, (70.0).degrees), 30.0),
-        FieldWaypoint(Pose(-70.0, -38.0, (180.0).degrees), 20.0),
-        FieldWaypoint(Pose(16.9, -0.0, 180.degrees), 15.0)
-    )
+    val submersibleIntermediate = Pose(14.18, -34.62, 62.degrees)
+    val submersiblePark = Pose(-12.0, -46.56, 180.degrees)
 
-    val toSubmersible = listOf(
-        FieldWaypoint(depositHighBucket, 25.0),
-        FieldWaypoint(Pose(8.78, -15.21, 46.degrees), 30.0),
-        ActionWaypoint {
-            opMode.robot.intakeComposite.prepareForPickup(
-                WristState.Lateral,
-                wideOpen = true,
-                doNotUseAutoMode = false,
-                submersibleOverride = (opMode.robot as HypnoticAutoRobot).activeY
-            )
+    val abortMoveBack = Pose(-6.0, -52.54, 0.degrees)
+    val abortRotated = Pose(4.04, -46.49, 180.degrees)
 
-            visionPipeline.resume()
-        },
-        FieldWaypoint(Pose(25.27, -10.66, 0.degrees), 25.0),
-        FieldWaypoint(Pose(25.27, -10.66, 0.degrees), 20.0)
-    )
-
-    val toBasket = listOf(
-        FieldWaypoint(Pose(25.27, -10.66, 0.degrees), 30.0),
-        FieldWaypoint(Pose(3.97, -5.61, 55.degrees), 30.0),
-        FieldWaypoint(depositHighBucket, 15.0),
-    )
+    val pickupTolerance = PositionChangeTolerance(1.0, 5.0, 0.8 * Math.PI / 180, 3.0, 80.0)
+    val initialBasketTolerance = PositionChangeTolerance(2.0, 8.0, 2.5 * Math.PI / 180, 10.0, 100.0)
+    val basketTolerance = PositionChangeTolerance(2.5, 25.0, 2.5 * Math.PI / 180, 12.5, 180.0)
+    val movingTolerance = PositionChangeTolerance(3.5, 60.0, 5.0 * Math.PI / 180, 100.0, 250.0)
 
     val pickupPositions = listOf(
-        GroundPickupPosition(pose = Pose(18.26, -8.35, 78.34.degrees)),
-        GroundPickupPosition(pose = Pose(21.88, -6.9, 91.76.degrees)),
+        GroundPickupPosition(
+            pose = Pose(18.26, -8.35, (77.5).degrees),
+            dynamicPosition = 0.46
+        ),
+        GroundPickupPosition(pose = Pose(21.88, -6.6, (91.3.degrees))),
         GroundPickupPosition(
             pose = Pose(17.3, -15.45, 131.71.degrees),
             extendoMode = true,
@@ -77,13 +56,35 @@ abstract class FiveSampleAutonomous(
         ),
     )
 
-    fun submersibleCycle() {
+    var hasConsumedAbort = false
+    fun submersibleCycle(depositHighBucketPose: Pose = depositHighBucket,
+                         initialSubPose: Pose = submersibleInitialPose) {
         single("submerse itself") {
-            visionPipeline.pause()
-            purePursuitNavigateTo(*toSubmersible.toTypedArray()) {
-                withAutomaticDeath(10000.0)
-                withCustomMaxTranslationalSpeed(1.0)
-                withCustomMaxRotationalSpeed(1.0)
+            if (this["abortMission"] != null) {
+                return@single
+            }
+
+            visionPipeline.resume()
+
+            navigateTo(submersibleIntermediate) {
+                withCustomTolerances(movingTolerance)
+                withAutomaticDeath(4000.0)
+                noStop(true)
+            }
+
+            opMode.robot.intakeComposite.prepareForPickup(
+                WristState.Lateral,
+                wideOpen = true,
+                submersibleOverride = 400
+            )
+
+            navigateTo(initialSubPose) {
+                withAutomaticDeath(3000.0)
+                withExtendoOut(true)
+            }
+
+            if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Pickup)) {
+                return@single
             }
         }
 
@@ -91,16 +92,33 @@ abstract class FiveSampleAutonomous(
 
         single("Return to basket or park") {
             visionPipeline.pause()
-            if (this["abortMission"] != null) {
-                navigateTo(Pose(17.25, -8.8, 0.degrees))
-                navigateTo(Pose(-82.0, -25.0, 180.0.degrees))
+            if (this["abortMission"] != null && !hasConsumedAbort) {
+                hasConsumedAbort = true
+                navigateTo(abortMoveBack)
+                navigateTo(abortRotated)
+                navigateTo(submersiblePark)
                 return@single
             }
 
-            purePursuitNavigateTo(*toBasket.toTypedArray()) {
-                withAutomaticDeath(10000.0)
-                withCustomMaxTranslationalSpeed(1.0)
-                withCustomMaxRotationalSpeed(1.0)
+            if (this["abortMission"] != null) {
+                return@single
+            }
+
+            navigateTo(submersibleIntermediate) {
+                withCustomTolerances(movingTolerance)
+                withAutomaticDeath(3000.0)
+                noStop(true)
+            }
+
+            if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.OuttakeReady)) {
+                return@single
+            }
+
+            opMode.robot.intakeComposite.initialOuttake(OuttakeLevel.HighBasket)
+
+            navigateTo(depositHighBucketPose) {
+                withCustomTolerances(initialBasketTolerance)
+                withAutomaticDeath(4000.0)
             }
 
             if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.Outtaking)) {
@@ -123,11 +141,11 @@ abstract class FiveSampleAutonomous(
 
     fun ExecutionGroup.depositToHighBasket(initial: Boolean = false) {
         single("high basket deposit") {
-            visionPipeline.pause()
             if (initial) {
                 opMode.robot.intakeComposite
                     .initialOuttakeFromRest(OuttakeLevel.HighBasket)
             } else {
+//                visionPipeline.pause()
                 opMode.robot.intakeComposite
                     .confirmAndTransferAndReady()
                     .thenComposeAsync {
@@ -150,7 +168,9 @@ abstract class FiveSampleAutonomous(
                 return@single
             }
 
-            opMode.robot.intakeComposite.outtakeCompleteAndRest().join()
+            opMode.robot.intakeComposite.outtakeCompleteAndRest(
+                waitPeriod = if (initial) 400L else 200L
+            ).join()
 
         }
     }
@@ -176,7 +196,7 @@ abstract class FiveSampleAutonomous(
 
             navigateTo(position.pose) {
                 withExtendoOut(true)
-                withAutomaticDeath(if (position.extendoMode) 2500.0 else 3500.0)
+                withAutomaticDeath(if (position.extendoMode) 1500.0 else 2000.0)
                 withCustomTolerances(pickupTolerance)
             }
 
@@ -209,9 +229,10 @@ abstract class FiveSampleAutonomous(
         depositToHighBasket()
     }
 
-    /*submersibleCycle()
+    submersibleCycle()
+    submersibleCycle(depositHighBucketFinal, initialSubPose = submersibleInitialPoseSecondCycle)
 
-    single("park near submersible") {
+    /*single("park near submersible") {
         if (this["abortMission"] == null)
         {
             visionPipeline.pause()
@@ -221,23 +242,25 @@ abstract class FiveSampleAutonomous(
                     shouldEnterPreDepositIfAvailable = false
                 )
 
-            purePursuitNavigateTo(*parkSubmersible.toTypedArray()) {
-                withAutomaticDeath(9000.0)
-                withCustomMaxTranslationalSpeed(0.5)
-                withCustomMaxRotationalSpeed(0.5)
+            navigateTo(submersibleIntermediate) {
+                withCustomTolerances(movingTolerance)
+                withAutomaticDeath(3000.0)
+                noStop(true)
             }
+            navigateTo(abortRotated) {
+                withCustomTolerances(movingTolerance)
+                withAutomaticDeath(3000.0)
+                noStop(true)
+            }
+
+            navigateTo(submersiblePark)
         }
     }*/
 }, {
-    if (instance.gamepad1.right_trigger > 0.1) {
-        it.activeX -= (it.opMode.gamepad1.right_trigger * 0.5).toInt()
-    }
-
     if (instance.gamepad1.left_trigger > 0.1) {
         it.activeY -= (it.opMode.gamepad1.left_trigger * 0.5).toInt()
     }
 
-    it.opMode.telemetry.addLine("Target X (Position): ${it.activeX}")
     it.opMode.telemetry.addLine("Target Y (Extension): ${it.activeY}")
 }
 )

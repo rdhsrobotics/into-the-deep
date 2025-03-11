@@ -32,9 +32,9 @@ public class PositionChangeAction {
 
     public static PIDCoefficients strafePID = new PIDCoefficients(0.25, 0.0, 0.02667);
     public static PIDCoefficients straightPID = new PIDCoefficients(0.21, 0.0, 0.033);
-    public static PIDCoefficients headingPID = new PIDCoefficients(1.4, 0.0, -0.125);
+    public static PIDCoefficients headingPID = new PIDCoefficients(1.45, 0.0, -0.135);
 
-    public static PIDCoefficients extendoOutHeadingPID = new PIDCoefficients(1.3, 0.0, -0.18);
+    public static PIDCoefficients extendoOutHeadingPID = new PIDCoefficients(1.375, 0.0, -0.165);
 
     public static double TURN_POWER_BOOST = -0.05;
     public static double STRAFE_POWER_BOOST = 0.045;
@@ -64,6 +64,7 @@ public class PositionChangeAction {
 
     private boolean telemetry = true;
     private boolean doNothing = false;
+    private boolean noStop = false;
 
     public PositionChangeAction(@Nullable Pose targetPose, @NotNull RootExecutionGroup executionGroup) {
         this.instance = HypnoticAuto.getInstance();
@@ -268,7 +269,9 @@ public class PositionChangeAction {
 
     protected void finish(@NotNull PositionChangeActionEndResult result) {
         if (result != PositionChangeActionEndResult.ForcefulTermination) {
-            HypnoticAuto.sendZeroCommand();
+            if (!noStop) {
+                HypnoticAuto.sendZeroCommand();
+            }
 
             if (endSubscription != null) {
                 endSubscription.invoke(result);
@@ -370,5 +373,9 @@ public class PositionChangeAction {
 
     public void disableAutomaticDeath() {
         this.automaticDeathMillis = null;
+    }
+
+    public void noStop(boolean use) {
+        noStop = use;
     }
 }

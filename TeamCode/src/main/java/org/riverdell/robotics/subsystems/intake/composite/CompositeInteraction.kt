@@ -110,7 +110,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         }
     }
 
-    fun outtakeCompleteAndRest() = stateMachineRestrict(
+    fun outtakeCompleteAndRest(waitPeriod: Long = 200L) = stateMachineRestrict(
         InteractionCompositeState.Outtaking,
         InteractionCompositeState.Rest,
         ignoreInProgress = true
@@ -118,7 +118,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         CompletableFuture.runAsync {
             if (robot is HypnoticAuto.HypnoticAutoRobot) {
                 robot.outtake.depositRotation()
-                Thread.sleep(200L)
+                Thread.sleep(waitPeriod)
             }
 
             outtake.openClaw()
@@ -260,9 +260,9 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             (if (!noPick) intakeV4B.v4bSamplePickup() else CompletableFuture.completedFuture(null))
                 .thenRunAsync {
                     if (!noPick) {
-                        Thread.sleep(125L)
+                        Thread.sleep(50L)
                         intake.closeIntake()
-                        Thread.sleep(125L)
+                        Thread.sleep(50L)
 
                         extras()
                     }
@@ -300,17 +300,17 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             outtake.transferCoaxial()
         ).join()
 
-        CompletableFuture.allOf(
+        /*CompletableFuture.allOf(
             outtake.transferRotationForce(),
             outtake.transferCoaxialForce()
-        ).join()
+        ).join()*/
 
-        Thread.sleep(100)
+//        Thread.sleep(100)
         CompletableFuture.allOf(
-            intake.openIntake(true),
+            intake.openIntake(true)
         )
 
-        Thread.sleep(80)
+        Thread.sleep(50)
         outtake.closeClaw()
         Thread.sleep(50)
 

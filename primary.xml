@@ -6,7 +6,7 @@
             <RevRoboticsUltraplanetaryHDHexMotor name="extendoLeft" port="1" />
             <RevRoboticsUltraplanetaryHDHexMotor name="liftRight" port="2" />
             <RevRoboticsUltraplanetaryHDHexMotor name="liftLeft" port="3" />
-            <ContinuousRotationServo name="hangRight" port="0" />
+            <Servo name="intakeClawLeft" port="0" />
             <Servo name="intakeClawRight" port="1" />
             <Servo name="outtakeRotationRight" port="2" />
             <Servo name="outtakeRotationLeft" port="3" />
@@ -19,13 +19,14 @@
             <goBILDA5201SeriesMotor name="backRight" port="1" />
             <goBILDA5201SeriesMotor name="frontRight" port="2" />
             <goBILDA5201SeriesMotor name="frontLeft" port="3" />
-            <!--            <Servo name="intakeClawRight" port="0" />-->
-            <Servo name="intakeClawLeft" port="1" />
+            <ContinuousRotationServo name="hangPrimary" port="0" />
+            <ContinuousRotationServo name="hangSecondary" port="1" />
             <Servo name="intakeWrist" port="2" />
             <Servo name="intakeV4BRight" port="3" />
             <Servo name="intakeV4BLeft" port="4" />
             <Servo name="intakeV4BCoaxial" port="5" />
+            <goBILDAPinpoint name="pinpoint" port="0" bus="0" />
         </LynxModule>
     </LynxUsbDevice>
-    <Webcam name="webcam" serialNumber="2022051301" />
+    <Webcam name="webcam" serialNumber="F8C31BC0" />
 </Robot>

@@ -59,12 +59,13 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
     /*
      * Threshold values
      */
-    public static int MIN_AREA = 125000;
+    public static int MIN_AREA = 135000;
     public static int MAX_AREA = 250000;
-    public static int YELLOW_MASK_THRESHOLD = 90;
+    public static int YELLOW_MASK_THRESHOLD = 115;
     public static int BLUE_MASK_THRESHOLD = 150;
     public static int RED_MASK_THRESHOLD = 150;
-    public static double PICKUP_Y_OFFSET = -4.5;
+    public static double PICKUP_X_OFFSET = -2.0;
+    public static double PICKUP_Y_OFFSET = 0.0;
 
     /*
      * The elements we use for noise reduction
@@ -85,6 +86,11 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         double angle;
         String color;
         org.riverdell.robotics.autonomous.movement.geometry.Point translate;
+
+
+        public String getColor() {
+            return color;
+        }
 
         public double getAngle() {
             return angle;
@@ -255,10 +261,12 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         AnalyzedSample closestStone = clientStoneList.get(0);
         double closestDist = closestStone.translate.radius();
         for (AnalyzedSample stone : clientStoneList) {
-            if (!(abs(stone.translate.x) > 290) && !(abs(stone.translate.y) > 200)) {
-                if (stone.translate.radius() < closestDist) {
-                    closestStone = stone;
-                }
+            if (abs(stone.translate.x) > 280 || abs(stone.translate.y) > 190) {
+                continue;
+            }
+
+            if (stone.translate.radius() < closestDist) {
+                closestStone = stone;
             }
         }
         return closestStone;

@@ -33,9 +33,6 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
 
     lateinit var pinpoint: GoBildaPinpointDriver
 
-    lateinit var bnoIMU: IMU
-    lateinit var bhiIMU: IMU
-
     lateinit var intakeV4BLeft: ServoImplEx
     lateinit var intakeV4BRight: ServoImplEx
     lateinit var intakeV4BCoaxial: ServoImplEx
@@ -58,32 +55,10 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
             hub.bulkCachingMode = LynxModule.BulkCachingMode.AUTO
         }
 
-//        imu = opMode.hardwareMap["imuLol"] as IMU //TODO Figure out which IMU is "lol" and "imu"
-//        imu.initialize(
-//            IMU.Parameters(
-//                RevHubOrientationOnRobot(
-//                    RevHubOrientationOnRobot.LogoFacingDirection.UP,
-//                    RevHubOrientationOnRobot.UsbFacingDirection.RIGHT
-//                )
-//            )
-//        )
-//        imu.resetYaw()
-
         pinpoint = opMode.hardwareMap.get(
             GoBildaPinpointDriver::class.java,
             "pinpoint"
         )
-
-        bhiIMU = opMode.hardwareMap["lol"] as IMU
-        bhiIMU.initialize(
-            IMU.Parameters(
-                RevHubOrientationOnRobot(
-                    RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                    RevHubOrientationOnRobot.UsbFacingDirection.LEFT
-                )
-            )
-        )
-        bhiIMU.resetYaw()
 
         frontLeft = opMode.hardwareMap.get(DcMotorEx::class.java, "frontLeft")
         frontRight = opMode.hardwareMap.get(DcMotorEx::class.java, "frontRight")

@@ -55,7 +55,7 @@ class VisionPipeline(
             .build()
 
         FtcDashboard.getInstance().startCameraStream(
-            yellowPipeline,
+            coloredPipeline,
             30.0
         )
 
@@ -67,6 +67,9 @@ class VisionPipeline(
         portal.setProcessorEnabled(coloredPipeline, false)
         portal.stopStreaming()
         portal.stopLiveView()
+        yellowPipeline.clientStoneList.clear()
+        coloredPipeline.clientStoneList.clear()
+        detectedSample = null
         paused = true
     }
 
@@ -77,6 +80,9 @@ class VisionPipeline(
             portal.resumeStreaming()
             portal.resumeLiveView()
         }
+        yellowPipeline.clientStoneList.clear()
+        coloredPipeline.clientStoneList.clear()
+        detectedSample = null
         paused = false
     }
 

@@ -20,9 +20,9 @@ class Lift(val robot: HypnoticRobot) : AbstractSubsystem() {
                 {
                     LiftConfig.f_g * (position / LiftConfig.MAX_EXTENSION)
                 } else { // If going near 0, give extra push down
-                    if (error > 4 && error < 30) // When elevator is just above the target position
+                    if (error > 3 && error < 35) // When elevator is just above the target position
                     {
-                        /*(0.03 * error * abs(error)).coerceIn(-0.35, 0.35)*/ -0.4
+                        /*(0.03 * error * abs(error)).coerceIn(-0.35, 0.35)*/ -1.0
                     } else {
                         0.0 // Don't pull down when very far or at target
                     }

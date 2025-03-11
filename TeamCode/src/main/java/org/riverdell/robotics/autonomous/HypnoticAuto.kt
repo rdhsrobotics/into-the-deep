@@ -48,7 +48,6 @@ abstract class HypnoticAuto(
     inner class HypnoticAutoRobot : HypnoticRobot(this@HypnoticAuto) {
         val visionPipeline by lazy { VisionPipeline(this@HypnoticAuto, sampleType) }
 
-        var activeX = -82
         var activeY = 300
 
         override fun additionalSubSystems() = listOf<AbstractSubsystem>(visionPipeline)
