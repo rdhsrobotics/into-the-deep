@@ -13,25 +13,22 @@ import org.riverdell.robotics.subsystems.outtake.ClawState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 import org.riverdell.robotics.subsystems.outtake.PivotState
 
-@Autonomous(name = "Super Speed 2+0 ")
+@Autonomous(name = "Super 2+0 ")
 class TestTwoSpec : HypnoticAuto({ robot ->
     single("Ultra fast 2+0") {
         // Define waypoints for Pure Pursuit navigation
         val startPose = Pose2d(0.0, 0.0, 0.degrees)
 
 
-        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
-        (OuttakeLevel.lowBar2)
-        Thread.sleep(1000)
+
+
         navigateTo(Pose(0.0, -28.4, 0.degrees)) //Specimen Scoring Line Up
-        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.bar2)
-        (OuttakeLevel.bar2)
-        Thread.sleep(2000)
+
         robot.robot.outtake.setClawState(ClawState.Open)
         navigateTo(Pose(-21.74, -13.19, 0.degrees))
         //robot.robot.outtake.setClawState(ClawState.Closed)
-        robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.rest)
-        robot.robot.outtake.setClawState(ClawState.Closed)
+
+
 
         Thread.sleep(1000)
         FieldWaypoint(Pose(-21.74, -19.19, 0.degrees), 10.0) // Waypoint a little back to avoid hitting bar

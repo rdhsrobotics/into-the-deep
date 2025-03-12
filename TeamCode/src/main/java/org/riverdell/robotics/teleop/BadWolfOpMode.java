@@ -111,7 +111,7 @@ public class BadWolfOpMode extends LinearOpMode {
                 // Raise elevator and also tune for new Misumi and new ultra planetary gears.
                 liftRight.setPower(1.0);
                 liftLeft.setPower(1.0);
-            } else if (gamepad1.left_bumper && liftRightPosition > 80 && liftLeftPosition > 70) {
+            } else if (gamepad1.left_bumper && liftRightPosition > 60 && liftLeftPosition > 60) {
                 // Lower elevator
                 liftRight.setPower(-1);
                 liftLeft.setPower(-1);
@@ -152,7 +152,7 @@ public class BadWolfOpMode extends LinearOpMode {
             }
 
             if (gamepad1.a || gamepad2.a) {
-                claw.setPosition(0.5);
+                claw.setPosition(0.8);
                 // Rumble both gamepads
                 gamepad1.rumble(0.5, 0.5, 100); // Left and right rumbling thing n the controller at full strength for 1 sec cuz why not
                 gamepad2.rumble(0.5, 0.5, 100);
@@ -170,14 +170,14 @@ public class BadWolfOpMode extends LinearOpMode {
 
             if (gamepad1.y || gamepad2.y) {
                 // Move servos to specific positions. This is the hover point
-                pivotRight.setPosition(0.44);//real low to hover. Make higher to hover higher and make lower to hover lower
-                pivotLeft.setPosition(0.56);//these two numbers should always add up to hundred. otherwise u are breaking the servos
+                pivotRight.setPosition(0.4);//real low to hover. Make higher to hover higher and make lower to hover lower
+                pivotLeft.setPosition(0.6);//these two numbers should always add up to hundred. otherwise u are breaking the servos
             }
 
             if (gamepad1.x || gamepad2.x) {
                 // Check if servos are in the correct positions for to perform a grab
                 //so if y is pressed and then x is pressed it performs a grab.
-                if (pivotRight.getPosition() == 0.44 && pivotLeft.getPosition() == 0.56) {
+                if (pivotRight.getPosition() == 0.4 && pivotLeft.getPosition() == 0.6) {
                     performGrab();
                 }
             }

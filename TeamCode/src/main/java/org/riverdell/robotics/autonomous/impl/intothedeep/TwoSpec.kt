@@ -10,7 +10,7 @@ import org.riverdell.robotics.subsystems.outtake.ClawState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 import org.riverdell.robotics.subsystems.outtake.PivotState
 
-@Autonomous(name = "2+0 Testing")
+@Autonomous(name = "2+0 Slow")
 class TwoSpec : HypnoticAuto({ robot ->
     single("2+0??") {
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.lowBar2)
@@ -52,11 +52,11 @@ class TwoSpec : HypnoticAuto({ robot ->
 
 
 
-        navigateTo(Pose(-30.0, 2.0, 270.degrees))
+        navigateTo(Pose(-32.0, -4.0, 270.degrees))
         robot.robot.outtake.setClawState(ClawState.Open)
         robot.robot.outtake.setPivotState(PivotState.Hover)
         Thread.sleep(1000)
-        navigateTo(Pose(-35.0, 2.0, 270.degrees))
+        navigateTo(Pose(-35.0, -4.0, 270.degrees))
         robot.robot.outtake.setPivotState(PivotState.PostHover)
         Thread.sleep(1000)
         robot.robot.outtake.setClawState(ClawState.Closed)
@@ -66,7 +66,7 @@ class TwoSpec : HypnoticAuto({ robot ->
         (OuttakeLevel.lowBar2)
         Thread.sleep(1000)
         navigateTo(Pose(-4.5, -21.0, 0.degrees))
-        navigateTo(Pose(-4.5, -28.5, 0.degrees))
+        navigateTo(Pose(-4.5, -32.5, 0.degrees))
         robot.robot.intakeComposite.outtakeLevel(OuttakeLevel.bar2)
         (OuttakeLevel.bar2)
         Thread.sleep(1000)
