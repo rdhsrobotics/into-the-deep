@@ -406,12 +406,12 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         return true
     }
 
-    fun prepareHangSituation() = stateMachineRestrict(
+    fun configureRobotForHang() = stateMachineRestrict(
         InteractionCompositeState.Rest,
         InteractionCompositeState.Hang
     ) {
-        intakeV4B.v4bSampleGateway().thenAcceptAsync {
-            Thread.sleep(500L)
+        intakeV4B.v4bUnlock().thenAcceptAsync {
+            Thread.sleep(150L)
             extension.extendToAndStayAt(400).join()
         }
     }

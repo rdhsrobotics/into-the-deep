@@ -140,7 +140,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     where(ButtonType.PlayStationLogo)
                         .onlyWhen { intakeComposite.state == InteractionCompositeState.Rest }
                         .triggers {
-                            intakeComposite.prepareHangSituation()
+                            intakeComposite.configureRobotForHang()
                         }
                         .whenPressedOnce()
 
