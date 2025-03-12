@@ -86,8 +86,8 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
         var start = System.currentTimeMillis()
         if (HypnoticRobot.resetMode) {
             while (liftMotorLeft.velocity.absoluteValue > 0.1 || System.currentTimeMillis() - start < 500L) {
-                liftMotorLeft.power = -0.5
-                liftMotorRight.power = -0.5
+                liftMotorLeft.power = -0.7
+                liftMotorRight.power = -0.7
             }
         }
 
@@ -124,8 +124,8 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
                     hasReset = true
                 }
 
-                extensionMotorLeft.power = -0.20
-                extensionMotorRight.power = -0.20
+                extensionMotorLeft.power = -0.35
+                extensionMotorRight.power = -0.35
             }
 
             extensionMotorLeft.power = 0.0
