@@ -174,7 +174,10 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     .whenPressedOnce()
 
                 where(ButtonType.ButtonB)
-                    .onlyWhen { intakeComposite.state == InteractionCompositeState.OuttakeReady }
+                    .onlyWhen {
+                        intakeComposite.state == InteractionCompositeState.OuttakeReady &&
+                                System.currentTimeMillis() - intakeComposite.lastRetransferInvocation >= 750L
+                    }
                     .triggers {
                         intakeComposite.reTransferOuttakeReady()
                     }

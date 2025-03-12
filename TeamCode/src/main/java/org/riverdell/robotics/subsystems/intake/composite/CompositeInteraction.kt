@@ -323,11 +323,13 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         ).join()
     }
 
+    var lastRetransferInvocation = System.currentTimeMillis()
     fun reTransferOuttakeReady() =
         stateMachineRestrict(
             InteractionCompositeState.OuttakeReady,
             InteractionCompositeState.OuttakeReady
         ) {
+            lastRetransferInvocation = System.currentTimeMillis()
             CompletableFuture.runAsync {
                 outtake.openClaw()
                 performTransferSequence()
