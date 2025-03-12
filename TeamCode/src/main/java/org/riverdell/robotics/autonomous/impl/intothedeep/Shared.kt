@@ -16,8 +16,9 @@ import org.riverdell.robotics.autonomous.movement.geometry.Pose
 import org.riverdell.robotics.autonomous.movement.navigateTo
 import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
+import java.util.concurrent.CompletableFuture
 
-fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isAborted: () -> Boolean = { false }, isolated: Boolean = false) {
+fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = false) {
     val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
     var detectedSample: AnalyzedSample? = null
     single("Search for sample") {
@@ -142,14 +143,18 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isAborted: () -> Boole
                 .thenComposeAsync {
                     opMode.robot.intakeComposite.confirmAndTransferAndReady()
                         .thenComposeAsync {
-                            opMode.robot.intakeComposite.outtakeCompleteAndRestFromOuttakeReady()
-                                .thenComposeAsync {
-                                    opMode.robot.intakeComposite
-                                        .initialOuttakeFromRest(
-                                            OuttakeLevel.Bar2,
-                                            shouldEnterPreDepositIfAvailable = false
-                                        )
-                                }
+                            if (!isolated) {
+                                opMode.robot.intakeComposite.outtakeCompleteAndRestFromOuttakeReady()
+                                    .thenComposeAsync {
+                                        opMode.robot.intakeComposite
+                                            .initialOuttakeFromRest(
+                                                OuttakeLevel.Bar2,
+                                                shouldEnterPreDepositIfAvailable = false
+                                            )
+                                    }
+                            } else {
+                                CompletableFuture.completedFuture(null)
+                            }
                         }
                 }
                 .apply {

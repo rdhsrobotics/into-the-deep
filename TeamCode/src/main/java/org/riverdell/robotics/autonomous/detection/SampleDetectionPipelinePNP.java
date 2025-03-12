@@ -75,9 +75,9 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
     /*
      * Colors
      */
-    public static final Scalar RED = new Scalar(0.0, 100.0, 100.0);
-    public static final Scalar BLUE = new Scalar(0, 0, 255);
-    public static final Scalar YELLOW = new Scalar(20.0, 100.0, 100.0);
+    public static Scalar RED = new Scalar(0.0, 100.0, 100.0);
+    public static Scalar BLUE = new Scalar(0, 0, 255);
+    public static Scalar YELLOW = new Scalar(20.0, 100.0, 100.0);
 
     public static final int CONTOUR_LINE_THICKNESS = 2;
 
@@ -143,8 +143,8 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         // Focal lengths (fx, fy) and principal point (cx, cy)
         double fx = 800; // Replace with your camera's focal length in pixels
         double fy = 800;
-        double cx = 320; // Replace with your camera's principal point x-coordinate (usually image width / 2)
-        double cy = 240; // Replace with your camera's principal point y-coordinate (usually image height / 2)
+        double cx = VisionPipeline.CAMERA_WIDTH / 2.0; // Replace with your camera's principal point x-coordinate (usually image width / 2)
+        double cy = VisionPipeline.CAMERA_HEIGHT / 2.0; // Replace with your camera's principal point y-coordinate (usually image height / 2)
 
         cameraMatrix.put(0, 0,
                 fx, 0, cx,
@@ -261,7 +261,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         AnalyzedSample closestStone = clientStoneList.get(0);
         double closestDist = closestStone.translate.radius();
         for (AnalyzedSample stone : clientStoneList) {
-            if (abs(stone.translate.x) > 280 || abs(stone.translate.y) > 190) {
+            if (abs(stone.translate.x) > VisionPipeline.CAMERA_WIDTH / 2.3 || abs(stone.translate.y) > VisionPipeline.CAMERA_HEIGHT / 2.3) {
                 continue;
             }
 

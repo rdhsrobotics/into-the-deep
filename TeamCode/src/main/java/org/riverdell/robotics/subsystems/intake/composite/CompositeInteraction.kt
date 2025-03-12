@@ -5,8 +5,6 @@ import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
-import org.riverdell.robotics.subsystems.slides.ExtensionConfig
-import org.riverdell.robotics.subsystems.slides.LiftConfig
 import org.riverdell.robotics.utilities.motionprofile.Constraint
 import java.util.concurrent.CompletableFuture
 
@@ -15,8 +13,9 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     var attemptedState: InteractionCompositeState? = null
     var attemptTime = System.currentTimeMillis()
     var outtakeLevel = OuttakeLevel.Bar2
+
     var lastOuttakeBegin = System.currentTimeMillis()
-    var shouldAutoGuide = false
+    var lastOuttakeRelease = System.currentTimeMillis()
 
     fun outtakeNext(): CompletableFuture<*> {
         if (state != InteractionCompositeState.Outtaking) {
@@ -110,7 +109,7 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
         }
     }
 
-    fun outtakeCompleteAndRest(waitPeriod: Long = 200L) = stateMachineRestrict(
+    fun outtakeCompleteAndRest(waitPeriod: Long = 200L, dynamicRelease: Boolean = false) = stateMachineRestrict(
         InteractionCompositeState.Outtaking,
         InteractionCompositeState.Rest,
         ignoreInProgress = true
@@ -119,14 +118,14 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
             if (robot is HypnoticAuto.HypnoticAutoRobot) {
                 robot.outtake.depositRotation()
                 Thread.sleep(waitPeriod)
-            }
-
-            outtake.openClaw()
-
-            if (robot is HypnoticAuto.HypnoticAutoRobot) {
+                outtake.openClaw()
                 Thread.sleep(250L)
             } else {
-                Thread.sleep(300L)
+                if (dynamicRelease) {
+                    if (System.currentTimeMillis() - lastOuttakeRelease < 300L) {
+                        Thread.sleep(300L)
+                    }
+                }
             }
 
             outtake.readyRotation()

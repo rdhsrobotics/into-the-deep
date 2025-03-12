@@ -17,6 +17,7 @@ import org.riverdell.robotics.autonomous.movement.navigateTo
 import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
+import java.util.concurrent.CompletableFuture
 
 abstract class SixSampleAutonomous(
     sampleType: SampleType
@@ -57,8 +58,11 @@ abstract class SixSampleAutonomous(
     )
 
     var hasConsumedAbort = false
-    fun submersibleCycle(depositHighBucketPose: Pose = depositHighBucket,
-                         initialSubPose: Pose = submersibleInitialPose) {
+
+    fun submersibleCycle(
+        depositHighBucketPose: Pose = depositHighBucket,
+        initialSubPose: Pose = submersibleInitialPose
+    ) {
         single("submerse itself") {
             if (this["abortMission"] != null) {
                 return@single
@@ -110,11 +114,13 @@ abstract class SixSampleAutonomous(
                 noStop(true)
             }
 
-            if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.OuttakeReady)) {
-                return@single
-            }
+            CompletableFuture.runAsync {
+                if (!opMode.robot.intakeComposite.waitForState(InteractionCompositeState.OuttakeReady)) {
+                    return@runAsync
+                }
 
-            opMode.robot.intakeComposite.initialOuttake(OuttakeLevel.HighBasket)
+                opMode.robot.intakeComposite.initialOuttake(OuttakeLevel.HighBasket)
+            }
 
             navigateTo(depositHighBucketPose) {
                 withCustomTolerances(initialBasketTolerance)
@@ -145,7 +151,6 @@ abstract class SixSampleAutonomous(
                 opMode.robot.intakeComposite
                     .initialOuttakeFromRest(OuttakeLevel.HighBasket)
             } else {
-//                visionPipeline.pause()
                 opMode.robot.intakeComposite
                     .confirmAndTransferAndReady()
                     .thenComposeAsync {
@@ -168,10 +173,11 @@ abstract class SixSampleAutonomous(
                 return@single
             }
 
-            opMode.robot.intakeComposite.outtakeCompleteAndRest(
-                waitPeriod = if (initial) 400L else 200L
-            ).join()
-
+            opMode.robot.intakeComposite
+                .outtakeCompleteAndRest(
+                    waitPeriod = if (initial) 300L else 200L
+                )
+                .join()
         }
     }
 
@@ -188,8 +194,7 @@ abstract class SixSampleAutonomous(
                 submersibleOverride = position.extendoPosition,
                 wideOpen = true,
             ).thenAcceptAsync {
-                if (position.dynamicPosition != null)
-                {
+                if (position.dynamicPosition != null) {
                     opMode.robot.intake.dynamicWrist(position.dynamicPosition!!)
                 }
             }
@@ -230,32 +235,14 @@ abstract class SixSampleAutonomous(
     }
 
     submersibleCycle()
-    submersibleCycle(depositHighBucketFinal, initialSubPose = submersibleInitialPoseSecondCycle)
+    submersibleCycle(
+        depositHighBucketFinal,
+        initialSubPose = submersibleInitialPoseSecondCycle
+    )
 
-    /*single("park near submersible") {
-        if (this["abortMission"] == null)
-        {
-            visionPipeline.pause()
-            opMode.robot.intakeComposite
-                .initialOuttakeFromRest(
-                    OuttakeLevel.Bar2,
-                    shouldEnterPreDepositIfAvailable = false
-                )
-
-            navigateTo(submersibleIntermediate) {
-                withCustomTolerances(movingTolerance)
-                withAutomaticDeath(3000.0)
-                noStop(true)
-            }
-            navigateTo(abortRotated) {
-                withCustomTolerances(movingTolerance)
-                withAutomaticDeath(3000.0)
-                noStop(true)
-            }
-
-            navigateTo(submersiblePark)
-        }
-    }*/
+    single("park near submersible") {
+        navigateTo(submersiblePark)
+    }
 }, {
     if (instance.gamepad1.left_trigger > 0.1) {
         it.activeY -= (it.opMode.gamepad1.left_trigger * 0.5).toInt()

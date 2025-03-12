@@ -39,10 +39,9 @@ public class SampleDetection implements CameraStreamSource, VisionProcessor {
     public static double PICKUP_X_ADJUSTMENT = 1.5;
 
     public static double TURN_FACTOR = 0.15;
-    public static double TURN_FACTOR_D_GAIN = -0.0001;
 
-    public static double FRAME_CENTER_X = 640.0;
-    public static double FRAME_CENTER_Y = 480.0;
+    public static double FRAME_CENTER_X = VisionPipeline.CAMERA_WIDTH / 2.0;
+    public static double FRAME_CENTER_Y = VisionPipeline.CAMERA_HEIGHT / 2.0;
 
     public static double X_GUIDANCE_SCALE = 0.015;
     public static double Y_GUIDANCE_SCALE = 0.015;

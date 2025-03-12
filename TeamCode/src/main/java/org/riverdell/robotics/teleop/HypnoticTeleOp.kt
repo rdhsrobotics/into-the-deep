@@ -8,7 +8,6 @@ import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.intake.composite.IntakeConfig
 import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import kotlin.math.absoluteValue
 import kotlin.math.max
@@ -23,7 +22,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
 
 //        val visionPipeline by lazy { VisionPipeline(teleOp) }
 
-        override fun additionalSubSystems() = listOf(gp1Commands, gp2Commands, /*visionPipeline*/)
+        override fun additionalSubSystems() = listOf(gp1Commands, gp2Commands /*visionPipeline*/)
         override fun initialize() {
 //            visionPipeline.sampleDetection.supplyCurrentWristPosition { intake.wrist.unwrapServo().position }
 //            visionPipeline.sampleDetection.setDetectionType(SampleType.BLUE)
@@ -43,8 +42,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
             multipleTelemetry.addLine("Started!")
             multipleTelemetry.update()
 
-            if (ManagedMotorGroup.keepEncoderPositions)
-            {
+            if (ManagedMotorGroup.keepEncoderPositions) {
                 lift.extendToAndStayAt(0)
                     .thenRun {
                         lift.slides.idle()
@@ -137,8 +135,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
         }
 
         private fun buildCommands() {
-            if (!teleOp.solo)
-            {
+            if (!teleOp.solo) {
                 gp1Commands.apply {
                     where(ButtonType.PlayStationLogo)
                         .onlyWhen { intakeComposite.state == InteractionCompositeState.Rest }
@@ -203,24 +200,25 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
 
                 where(if (teleOp.solo) ButtonType.BumperLeft else ButtonType.DPadRight)
                     .onlyWhen {
-                        intakeComposite.state == InteractionCompositeState.Outtaking ||
-                                intakeComposite.state == InteractionCompositeState.OuttakeReady
+                        intakeComposite.state == InteractionCompositeState.OuttakeReady
                     }
                     .triggers {
-                        if (intakeComposite.state == InteractionCompositeState.OuttakeReady)
-                        {
-                            intakeComposite.outtakeCompleteAndRestFromOuttakeReady()
-                            return@triggers
-                        }
-
-                        if (System.currentTimeMillis() - intakeComposite.lastOuttakeBegin < 750L)
-                        {
-                            return@triggers
-                        }
-
-                        intakeComposite.outtakeCompleteAndRest()
+                        intakeComposite.outtakeCompleteAndRestFromOuttakeReady()
                     }
                     .whenPressedOnce()
+
+                where(if (teleOp.solo) ButtonType.BumperLeft else ButtonType.DPadRight)
+                    .onlyWhen {
+                        intakeComposite.state == InteractionCompositeState.Outtaking &&
+                                System.currentTimeMillis() - intakeComposite.lastOuttakeBegin >= 750L
+                    }
+                    .triggers {
+                        intakeComposite.lastOuttakeRelease = System.currentTimeMillis()
+                        outtake.openClaw()
+                    }
+                    .andIsHeldUntilReleasedWhere {
+                        intakeComposite.outtakeCompleteAndRest(dynamicRelease = true)
+                    }
 
                 where(ButtonType.DPadLeft)
                     .onlyWhen { intakeComposite.state == InteractionCompositeState.SpecimenReady }
@@ -261,18 +259,18 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     }
                     .whenPressedOnce()
 
-  /*              where(ButtonType.ButtonY)
-                    .onlyWhen {
-                        intakeComposite.state != InteractionCompositeState.InProgress
-                    }
-                    .triggers {
-                        if (intakeComposite.state == InteractionCompositeState.Rest) {
-                            intakeComposite.wallOuttakeFromRest()
-                        } else if (intakeComposite.state == InteractionCompositeState.WallIntakeViaOuttake) {
-                            intakeComposite.wallOuttakeToSpecimenReady()
-                        }
-                    }
-                    .whenPressedOnce()*/
+                /*              where(ButtonType.ButtonY)
+                                  .onlyWhen {
+                                      intakeComposite.state != InteractionCompositeState.InProgress
+                                  }
+                                  .triggers {
+                                      if (intakeComposite.state == InteractionCompositeState.Rest) {
+                                          intakeComposite.wallOuttakeFromRest()
+                                      } else if (intakeComposite.state == InteractionCompositeState.WallIntakeViaOuttake) {
+                                          intakeComposite.wallOuttakeToSpecimenReady()
+                                      }
+                                  }
+                                  .whenPressedOnce()*/
 
                 where(ButtonType.ButtonX)
                     .onlyWhen {

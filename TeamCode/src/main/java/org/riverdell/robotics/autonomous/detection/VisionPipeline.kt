@@ -17,6 +17,11 @@ class VisionPipeline(
     val coloredType: SampleType = SampleType.Red,
 ) : AbstractSubsystem()
 {
+    companion object {
+        const val CAMERA_WIDTH = 1280
+        const val CAMERA_HEIGHT = 720
+    }
+
     lateinit var portal: VisionPortal
     lateinit var yellowPipeline: SampleDetectionPipelinePNP
     lateinit var coloredPipeline: SampleDetectionPipelinePNP
@@ -44,7 +49,7 @@ class VisionPipeline(
             .setCamera(
                 opMode.hardwareMap["webcam"] as WebcamName
             )
-            .setCameraResolution(Size(1280, 960))
+            .setCameraResolution(Size(CAMERA_WIDTH, CAMERA_HEIGHT))
             .enableLiveView(false)
             .setAutoStopLiveView(true)
             .addProcessors(
