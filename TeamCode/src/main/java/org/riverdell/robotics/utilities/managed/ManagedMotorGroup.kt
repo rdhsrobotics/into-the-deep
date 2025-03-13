@@ -290,4 +290,8 @@ class ManagedMotorGroup(
             it.power = 0.0
         }
     }
+
+    fun disableStuckProtection() {
+        stuckProtection = null
+    }
 }

@@ -25,14 +25,15 @@ abstract class SixSampleAutonomous(
     val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
 
     val startPose = Pose2d(0.0, 0.0, 0.degrees)
-    val depositHighBucket = Pose(18.83, -6.06, (43.26).degrees)
-    val depositHighBucketFinal = Pose(17.0, -5.8, (43.26).degrees)
+    val depositHighBucket = Pose(19.2, -5.8, (43.26).degrees)
+    val depositHighBucketFinal = Pose(18.0, -5.0, (42.0).degrees)
 
-    val submersibleInitialPose = Pose(-3.0, -52.0, 0.degrees)
+    val submersibleInitialPose = Pose(-6.0, -52.0, 0.degrees)
     val submersibleInitialPoseSecondCycle = Pose(-3.0, -55.0, 0.degrees)
 
-    val submersibleIntermediate = Pose(14.18, -34.62, 62.degrees)
-    val submersiblePark = Pose(-12.0, -46.56, 180.degrees)
+    val submersibleIntermediate = Pose(16.5, -38.0, 60.degrees)
+    val submersibleRotatedIntermediate = Pose(8.5, -52.0, 0.degrees)
+    val submersiblePark = Pose(-18.0, -46.56, 180.degrees)
 
     val abortMoveBack = Pose(-6.0, -52.54, 0.degrees)
     val abortRotated = Pose(4.04, -46.49, 180.degrees)
@@ -49,7 +50,7 @@ abstract class SixSampleAutonomous(
         ),
         GroundPickupPosition(pose = Pose(21.88, -6.6, (91.3.degrees))),
         GroundPickupPosition(
-            pose = Pose(17.3, -15.45, 131.71.degrees),
+            pose = Pose(17.0, -15.45, 131.71.degrees),
             extendoMode = true,
             wristState = WristState.Lateral,
             dynamicPosition = 0.6,
@@ -68,22 +69,29 @@ abstract class SixSampleAutonomous(
                 return@single
             }
 
-            visionPipeline.resume()
-
             navigateTo(submersibleIntermediate) {
                 withCustomTolerances(movingTolerance)
                 withAutomaticDeath(4000.0)
                 noStop(true)
             }
 
-            opMode.robot.intakeComposite.prepareForPickup(
-                WristState.Lateral,
-                wideOpen = true,
-                submersibleOverride = 400
-            )
+            navigateTo(submersibleRotatedIntermediate) {
+                withCustomTolerances(movingTolerance)
+                withAutomaticDeath(4000.0)
+                noStop(true)
+            }
+
+            CompletableFuture.runAsync {
+                visionPipeline.resume()
+                opMode.robot.intakeComposite.prepareForPickup(
+                    WristState.Lateral,
+                    wideOpen = true,
+                    submersibleOverride = 400
+                )
+            }
 
             navigateTo(initialSubPose) {
-                withAutomaticDeath(3000.0)
+                withAutomaticDeath(3500.0)
                 withExtendoOut(true)
             }
 
@@ -110,7 +118,7 @@ abstract class SixSampleAutonomous(
 
             navigateTo(submersibleIntermediate) {
                 withCustomTolerances(movingTolerance)
-                withAutomaticDeath(3000.0)
+                withAutomaticDeath(3500.0)
                 noStop(true)
             }
 

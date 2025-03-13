@@ -42,6 +42,12 @@ class Extension(val robot: HypnoticRobot) : AbstractSubsystem()
         slides.idle()
     }
 
+    fun reconfigureForHang() {
+        slides.disableStuckProtection()
+        slides.withTimeout(15000L)
+        slides.feedForward { static(-1.0) }
+    }
+
     override fun doInitialize()
     {
 

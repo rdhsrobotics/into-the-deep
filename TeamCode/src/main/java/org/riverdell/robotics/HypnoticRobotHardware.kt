@@ -124,8 +124,8 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
                     hasReset = true
                 }
 
-                extensionMotorLeft.power = -0.35
-                extensionMotorRight.power = -0.35
+                extensionMotorLeft.power = -0.5
+                extensionMotorRight.power = -0.5
             }
 
             extensionMotorLeft.power = 0.0

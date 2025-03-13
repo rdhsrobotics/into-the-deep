@@ -137,6 +137,15 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
         private fun buildCommands() {
             if (!teleOp.solo) {
                 gp1Commands.apply {
+                    where(ButtonType.ButtonX)
+                        .onlyWhen {
+                            intakeComposite.state == InteractionCompositeState.Rest
+                        }
+                        .triggers {
+                            intakeComposite.prepareTouchHang()
+                        }
+                        .whenPressedOnce()
+
                     where(ButtonType.PlayStationLogo)
                         .onlyWhen { intakeComposite.state == InteractionCompositeState.Rest }
                         .triggers {
@@ -147,14 +156,11 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     where(ButtonType.ButtonY)
                         .onlyWhen { intakeComposite.state == InteractionCompositeState.Hang }
                         .triggers {
-                            teleOp.robot.extension.slides.idle()
-                            teleOp.robot.hardware.extensionMotorLeft.power = -1.0
-                            teleOp.robot.hardware.extensionMotorRight.power = -1.0
+                            teleOp.robot.extension.reconfigureForHang()
+                            teleOp.robot.extension.extendToAndStayAt(90)
+                            intakeComposite.state = InteractionCompositeState.HangComplete
                         }
-                        .andIsHeldUntilReleasedWhere {
-                            teleOp.robot.hardware.extensionMotorLeft.power = 0.0
-                            teleOp.robot.hardware.extensionMotorRight.power = 0.0
-                        }
+                        .whenPressedOnce()
                 }
             }
 
@@ -244,36 +250,23 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                 where(ButtonType.DPadUp)
                     .onlyWhen { intakeComposite.state == InteractionCompositeState.Outtaking }
                     .triggers {
-                        intakeComposite.outtakeNext()
+                        intakeComposite.outtakeNext(memory = true)
                     }
                     .whenPressedOnce()
 
                 where(ButtonType.DPadDown)
                     .onlyWhen { intakeComposite.state == InteractionCompositeState.Outtaking }
                     .triggers {
-                        intakeComposite.outtakePrevious()
+                        intakeComposite.outtakePrevious(memory = true)
                     }
                     .whenPressedOnce()
 
                 where(if (teleOp.solo) ButtonType.BumperRight else ButtonType.DPadUp)
                     .onlyWhen { intakeComposite.state == InteractionCompositeState.OuttakeReady }
                     .triggers {
-                        intakeComposite.initialOuttake()
+                        intakeComposite.initialOuttake(preferMemory = true)
                     }
                     .whenPressedOnce()
-
-                /*              where(ButtonType.ButtonY)
-                                  .onlyWhen {
-                                      intakeComposite.state != InteractionCompositeState.InProgress
-                                  }
-                                  .triggers {
-                                      if (intakeComposite.state == InteractionCompositeState.Rest) {
-                                          intakeComposite.wallOuttakeFromRest()
-                                      } else if (intakeComposite.state == InteractionCompositeState.WallIntakeViaOuttake) {
-                                          intakeComposite.wallOuttakeToSpecimenReady()
-                                      }
-                                  }
-                                  .whenPressedOnce()*/
 
                 where(ButtonType.ButtonX)
                     .onlyWhen {

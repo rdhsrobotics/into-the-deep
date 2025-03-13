@@ -45,6 +45,7 @@ class IntakeV4B(private val robot: HypnoticRobot) : AbstractSubsystem()
     fun v4bUnlock() = setV4B(V4BState.UnlockedIdleHover)
     fun v4bTransfer() = setV4B(V4BState.Transfer)
     fun v4bSamplePickup() = setV4B(V4BState.Pickup)
+    fun v4bSampleScan() = setV4B(V4BState.SampleScan)
 
     fun setV4B(state: V4BState) = let {
         if (state == v4bState)

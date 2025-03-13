@@ -56,15 +56,15 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
 
     Mat contoursOnPlainImageMat = new Mat();
 
-    /*
-     * Threshold values
-     */
-    public static int MIN_AREA = 135000;
-    public static int MAX_AREA = 250000;
-    public static int YELLOW_MASK_THRESHOLD = 115;
-    public static int BLUE_MASK_THRESHOLD = 150;
-    public static int RED_MASK_THRESHOLD = 150;
-    public static double PICKUP_X_OFFSET = -2.0;
+    /* Threshold values */
+    public static int MIN_AREA = 130000;
+    public static int MAX_AREA = 160000;
+
+    public static int YELLOW_MASK_THRESHOLD = 90;
+    public static int BLUE_MASK_THRESHOLD = 160;
+    public static int RED_MASK_THRESHOLD = 160;
+
+    public static double PICKUP_X_OFFSET = 1.15;
     public static double PICKUP_Y_OFFSET = 0.0;
 
     /*
@@ -75,9 +75,9 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
     /*
      * Colors
      */
-    public static Scalar RED = new Scalar(0.0, 100.0, 100.0);
-    public static Scalar BLUE = new Scalar(0, 0, 255);
-    public static Scalar YELLOW = new Scalar(20.0, 100.0, 100.0);
+    public static Scalar RED = new Scalar(191, 78, 980);
+    public static Scalar BLUE = new Scalar(105, 112, 255);
+    public static Scalar YELLOW = new Scalar(125, 125, 0);
 
     public static final int CONTOUR_LINE_THICKNESS = 2;
 
@@ -86,7 +86,11 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         double angle;
         String color;
         org.riverdell.robotics.autonomous.movement.geometry.Point translate;
+        double area;
 
+        public double getArea() {
+            return area;
+        }
 
         public String getColor() {
             return color;
@@ -125,7 +129,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
     Stage[] stages = Stage.values();
 
     // Keep track of what stage the viewport is showing
-    public static int stageNum = 0;
+    public static int stageNum = 1;
 
     public SampleType sampleType = SampleType.Yellow;
 
@@ -281,9 +285,8 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
             // Extract the Cr channel for red detection
             Core.extractChannel(ycrcbMat, crMat, 1); // Cr channel index is 1
         } else if (sampleType == SampleType.Blue) {
-            Core.extractChannel(ycrcbMat, cbMat, 0);
-        }
-        else if (sampleType == SampleType.Yellow) {
+            Core.extractChannel(ycrcbMat, cbMat, 2);
+        } else if (sampleType == SampleType.Yellow) {
             Core.extractChannel(ycrcbMat, cbMat, 2);
         }
 
@@ -404,6 +407,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
             analyzedSample.color = color;
             analyzedSample.translate = new org.riverdell.robotics.autonomous.movement.geometry.Point(
                     rotatedRectFitToContour.center.x - 1280.0 / 2, rotatedRectFitToContour.center.y - 960.0 / 2);
+            analyzedSample.area = rotatedRectFitToContour.size.area();
 
             internalStoneList.add(analyzedSample);
         }

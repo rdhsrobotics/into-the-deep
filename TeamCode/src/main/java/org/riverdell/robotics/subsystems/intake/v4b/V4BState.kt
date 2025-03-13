@@ -8,6 +8,7 @@ enum class V4BState(val position: Double)
     UnlockedIdleHover(0.3),
     Transfer(0.23),
     Intermediate(0.5), //0.5
+    SampleScan(0.7), //0.5
     AutoGateway(0.77),
 
     Gateway(0.9),
