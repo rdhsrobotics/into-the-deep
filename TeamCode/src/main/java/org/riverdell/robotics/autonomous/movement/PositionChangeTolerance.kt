@@ -1,6 +1,6 @@
 package org.riverdell.robotics.autonomous.movement
 
-class PositionChangeTolerance (
+class PositionChangeTolerance(
     @JvmField
     var translateTolerance: Double = 1.1,
     @JvmField
@@ -12,6 +12,3 @@ class PositionChangeTolerance (
     @JvmField
     var predictMillis: Double = 100.0
 )
-{
-
-}

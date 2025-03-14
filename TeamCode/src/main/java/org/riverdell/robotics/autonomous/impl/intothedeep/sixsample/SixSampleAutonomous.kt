@@ -30,7 +30,7 @@ abstract class SixSampleAutonomous(
     val depositHighBucketFinal = Pose(18.0, -5.0, (42.0).degrees)
 
     val submersibleInitialPose = Pose(-6.0, -52.0, 0.degrees)
-    val submersibleInitialPoseSecondCycle = Pose(-3.0, -55.0, 0.degrees)
+    val submersibleInitialPoseSecondCycle = Pose(-6.0, -55.0, 0.degrees)
 
     val submersibleIntermediate = Pose(16.5, -38.0, 60.degrees)
     val submersibleRotatedIntermediate = Pose(8.5, -52.0, 0.degrees)
