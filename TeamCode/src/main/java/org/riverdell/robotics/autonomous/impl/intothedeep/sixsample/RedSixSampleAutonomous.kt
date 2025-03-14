@@ -1,4 +1,4 @@
-package org.riverdell.robotics.autonomous.impl.intothedeep.fivesample
+package org.riverdell.robotics.autonomous.impl.intothedeep.sixsample
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import org.riverdell.robotics.autonomous.detection.SampleType

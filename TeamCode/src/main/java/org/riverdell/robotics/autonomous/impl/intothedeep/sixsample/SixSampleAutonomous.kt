@@ -1,4 +1,4 @@
-package org.riverdell.robotics.autonomous.impl.intothedeep.fivesample
+package org.riverdell.robotics.autonomous.impl.intothedeep.sixsample
 
 import com.acmerobotics.roadrunner.geometry.Pose2d
 import io.liftgate.robotics.mono.pipeline.ExecutionGroup
