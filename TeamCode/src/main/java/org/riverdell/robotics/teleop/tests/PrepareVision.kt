@@ -5,32 +5,30 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import com.qualcomm.robotcore.hardware.Servo
+import org.riverdell.robotics.autonomous.detection.SampleDetectionPipelinePNP
 import org.riverdell.robotics.autonomous.detection.VisionPipeline
 
 @TeleOp(
     name = "Prepare Vision",
     group = "Tests"
 )
-class PrepareVision : LinearOpMode()
-{
-    override fun runOpMode()
-    {
+class PrepareVision : LinearOpMode() {
+    override fun runOpMode() {
         val visionPipeline = VisionPipeline(this)
         visionPipeline.initialize()
 
         waitForStart()
-        if (isStopRequested)
-        {
+        if (isStopRequested) {
             return
         }
 
+        var currentStreamType = VisionPipeline.STREAM_VIEW
         val multipleTelemetry = MultipleTelemetry(
             telemetry,
             FtcDashboard.getInstance().telemetry
         )
 
         visionPipeline.resume()
-
 
         val left = hardwareMap["intakeV4BLeft"] as Servo
         left.position = 0.3
@@ -41,29 +39,40 @@ class PrepareVision : LinearOpMode()
         val coaxial = hardwareMap["intakeV4BCoaxial"] as Servo
         coaxial.position = 0.685
 
-        while (opModeIsActive())
-        {
+        while (opModeIsActive()) {
             visionPipeline.periodic()
 
-            multipleTelemetry.addLine("=== Detected Sample ===")
-            visionPipeline.detectedSample?.apply {
-                multipleTelemetry.addLine("Angle: ${
-                    this.angle
-                }")
-                multipleTelemetry.addLine("Vector: ${
-                    this.translate
-                }")
-                multipleTelemetry.addLine("Color: ${
-                    this.color
-                }")
-                multipleTelemetry.addLine("Area: ${
-                    this.area
-                }")
-            } ?: run {
-                multipleTelemetry.addLine("NONE")
+            fun SampleDetectionPipelinePNP.AnalyzedSample.reportToTelemetry(title: String) {
+                multipleTelemetry.addLine("=== $title ===")
+                multipleTelemetry.addLine("Angle: $angle")
+                multipleTelemetry.addLine("Vector: $translate")
+                multipleTelemetry.addLine("Color: $color")
+                multipleTelemetry.addLine("Area: $area")
             }
-            multipleTelemetry.update()
 
+            multipleTelemetry.addLine("=== Streaming ===")
+            multipleTelemetry.addLine("View: $currentStreamType")
+
+            multipleTelemetry.addLine("=== Detected Sample ===")
+            multipleTelemetry.addLine("Found: ${visionPipeline.aggregateSampleCache.size}")
+
+            if (visionPipeline.aggregateSampleCache.isNotEmpty()) {
+                val cache = visionPipeline.aggregateSampleCache
+                    .sortedBy { it.translate.radius() }
+
+                cache.firstOrNull()
+                    ?.apply {
+                        reportToTelemetry("Primary Selection")
+                    }
+
+                if (cache.size > 1) {
+                    cache[1].reportToTelemetry("Secondary Selection (Next Cycle)")
+                }
+            } else {
+                multipleTelemetry.addLine("=== None detected ===")
+            }
+
+            multipleTelemetry.update()
             Thread.sleep(50L)
         }
 

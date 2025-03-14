@@ -9,6 +9,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.autonomous.detection.SampleType
 import org.riverdell.robotics.autonomous.impl.intothedeep.GroundPickupPosition
+import org.riverdell.robotics.autonomous.impl.intothedeep.buildRobotTargetVector
 import org.riverdell.robotics.autonomous.impl.intothedeep.visionIntake
 import org.riverdell.robotics.autonomous.movement.PositionChangeTolerance
 import org.riverdell.robotics.autonomous.movement.degrees
@@ -90,7 +91,14 @@ abstract class SixSampleAutonomous(
                 )
             }
 
-            navigateTo(initialSubPose) {
+            if (visionPipeline.preferredNextPick != null) {
+                println("Using preferred next pick for initial sub pose")
+            }
+
+            navigateTo(
+                visionPipeline.preferredNextPick?.buildRobotTargetVector(opMode)
+                    ?: initialSubPose
+            ) {
                 withAutomaticDeath(3500.0)
                 withExtendoOut(true)
             }

@@ -18,9 +18,31 @@ import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 import java.util.concurrent.CompletableFuture
 
+fun AnalyzedSample.buildTranslateVector(): Point {
+    return translate
+        .divide(110.0)
+        .add(Point(
+            SampleDetectionPipelinePNP.PICKUP_X_OFFSET,
+            SampleDetectionPipelinePNP.PICKUP_Y_OFFSET
+        ))
+}
+
+fun AnalyzedSample.buildRobotTargetVector(opMode: HypnoticAuto): Pose {
+    val translate = buildTranslateVector()
+    println("Translate: $translate")
+
+    val current = opMode.robot.hardware.pinpoint.position
+    return Pose(
+        current.getX(DistanceUnit.INCH) - translate.x,
+        current.getY(DistanceUnit.INCH) + translate.y,
+        current.getHeading(AngleUnit.RADIANS)
+    )
+}
+
 fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = false) {
     val visionPipeline = (opMode.robot as HypnoticAutoRobot).visionPipeline
     var detectedSample: AnalyzedSample? = null
+    var detectedSampleCache: List<AnalyzedSample> = listOf()
     single("Search for sample") {
         if (this["abortMission"] != null) {
             return@single
@@ -40,10 +62,6 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
 
         val clock = ElapsedTime(ElapsedTime.Resolution.MILLISECONDS)
         var iterations = 0
-
-        visionPipeline.detectedSample = null
-        visionPipeline.yellowPipeline.detectedStones.clear()
-        visionPipeline.coloredPipeline.detectedStones.clear()
 
         while (detectedSample == null && iterations < 4) {
             if (iterations > 0) {
@@ -77,7 +95,16 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
             clock.reset()
             while (detectedSample == null && clock.time() < 120) {
                 visionPipeline.periodic()
-                detectedSample = visionPipeline.detectedSample
+                detectedSampleCache = visionPipeline.aggregateSampleCache
+                    .sortedBy { it.translate.radius() }
+                detectedSample = detectedSampleCache.firstOrNull()
+            }
+
+            if (detectedSample != null) {
+                if (detectedSampleCache.size > 1) {
+                    visionPipeline.preferredNextPick = detectedSampleCache[1]
+                    println("Detected a preferred next pick sample: Translate: " + detectedSample!!.translate + " Angle: " + detectedSample!!.angle + " Color: " + detectedSample!!.color)
+                }
             }
 
             iterations += 1
@@ -99,28 +126,19 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
             return@single
         }
 
-        println("Picking up")
         if (detectedSample != null) {
             var angle = detectedSample?.angle ?: 0.0
             if (angle > 90) {
                 angle -= 180
             }
+
             opMode.robot.hardware.intakeWrist.position =
                 WristState.Lateral.position + angle / 290.0
 
-            val translate = detectedSample!!.translate.divide(110.0)
-                .add(Point(SampleDetectionPipelinePNP.PICKUP_X_OFFSET, SampleDetectionPipelinePNP.PICKUP_Y_OFFSET))
+            val translate = detectedSample!!.buildTranslateVector()
+            val target = detectedSample!!.buildRobotTargetVector(opMode)
 
-            println("Translate: $translate")
-
-            val current = opMode.robot.hardware.pinpoint.position
-            val target = Pose(
-                current.getX(DistanceUnit.INCH) - translate.x,
-                current.getY(DistanceUnit.INCH) + translate.y,
-                current.getHeading(AngleUnit.RADIANS)
-            )
-
-            if (translate.radius() > 1.1) {
+            if (translate.radius() > SampleDetectionPipelinePNP.MIN_TRANSLATION_RADIUS) {
                 navigateTo(target) {
                     withCustomTolerances(PositionChangeTolerance(
                         translateTolerance = 1.1,

@@ -31,6 +31,7 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Config
@@ -66,6 +67,8 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
 
     public static double PICKUP_X_OFFSET = 1.15;
     public static double PICKUP_Y_OFFSET = 0.0;
+
+    public static double MIN_TRANSLATION_RADIUS = 1.1;
 
     /*
      * The elements we use for noise reduction
@@ -105,8 +108,13 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         }
     }
 
-    ArrayList<AnalyzedSample> internalStoneList = new ArrayList<>();
-    volatile ArrayList<AnalyzedSample> clientStoneList = new ArrayList<>();
+    public ArrayList<AnalyzedSample> internalStoneList = new ArrayList<>();
+    public ArrayList<AnalyzedSample> clientSampleList = new ArrayList<>();
+
+    public void clearCache() {
+        internalStoneList.clear();
+        clientSampleList.clear();
+    }
 
     /*
      * Camera Calibration Parameters
@@ -172,7 +180,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
          */
         findContours(input);
 
-        clientStoneList = new ArrayList<>(internalStoneList);
+        clientSampleList = new ArrayList<>(internalStoneList);
 
         /*
          * Decide which buffer to send to the viewport
@@ -251,29 +259,8 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         return input;
     }
 
-    public ArrayList<AnalyzedSample> getDetectedStones()
-    {
-        return clientStoneList;
-    }
-
-    @Nullable
-    public AnalyzedSample chooseClosestValidSample() {
-        if (clientStoneList.isEmpty()) {
-            return null;
-        }
-
-        AnalyzedSample closestStone = clientStoneList.get(0);
-        double closestDist = closestStone.translate.radius();
-        for (AnalyzedSample stone : clientStoneList) {
-            if (abs(stone.translate.x) > VisionPipeline.CAMERA_WIDTH / 2.3 || abs(stone.translate.y) > VisionPipeline.CAMERA_HEIGHT / 2.3) {
-                continue;
-            }
-
-            if (stone.translate.radius() < closestDist) {
-                closestStone = stone;
-            }
-        }
-        return closestStone;
+    public List<AnalyzedSample> getAllAnalyzedSamples() {
+        return clientSampleList;
     }
 
     void findContours(Mat input)
@@ -406,8 +393,15 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
             analyzedSample.angle = rotRectAngle;
             analyzedSample.color = color;
             analyzedSample.translate = new org.riverdell.robotics.autonomous.movement.geometry.Point(
-                    rotatedRectFitToContour.center.x - 1280.0 / 2, rotatedRectFitToContour.center.y - 960.0 / 2);
+                    rotatedRectFitToContour.center.x - VisionPipeline.CAMERA_WIDTH / 2,
+                    rotatedRectFitToContour.center.y - VisionPipeline.CAMERA_HEIGHT / 2
+            );
             analyzedSample.area = rotatedRectFitToContour.size.area();
+
+            if (abs(analyzedSample.translate.x) > VisionPipeline.CAMERA_WIDTH / 2.3 ||
+                    abs(analyzedSample.translate.y) > VisionPipeline.CAMERA_HEIGHT / 2.3) {
+                return;
+            }
 
             internalStoneList.add(analyzedSample);
         }
