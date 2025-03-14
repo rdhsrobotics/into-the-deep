@@ -12,7 +12,6 @@ import org.firstinspires.ftc.robotcore.external.function.Continuation;
 import org.firstinspires.ftc.robotcore.external.stream.CameraStreamSource;
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration;
 import org.firstinspires.ftc.vision.VisionProcessor;
-import org.jetbrains.annotations.Nullable;
 import org.opencv.android.Utils;
 
 import org.opencv.calib3d.Calib3d;
@@ -70,19 +69,24 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
 
     public static double MIN_TRANSLATION_RADIUS = 1.1;
 
+    public static double OBJECT_WIDTH = 10.0;  // Replace with your object's width in real-world units (e.g., centimeters)
+    public static double OBJECT_HEIGHT = 5.0;  // Replace with your object's height in real-world units
+
+    // Keep track of what stage the viewport is showing
+    public static int VIEWPORT_STAGE_NUM = 1;
+
     /*
      * The elements we use for noise reduction
      */
     Mat erodeElement = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3.5, 3.5));
     Mat dilateElement = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3.5, 3.5));
+
     /*
      * Colors
      */
     public static Scalar RED = new Scalar(191, 78, 980);
     public static Scalar BLUE = new Scalar(105, 112, 255);
     public static Scalar YELLOW = new Scalar(125, 125, 0);
-
-    public static final int CONTOUR_LINE_THICKNESS = 2;
 
     public static class AnalyzedSample
     {
@@ -136,9 +140,6 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
 
     Stage[] stages = Stage.values();
 
-    // Keep track of what stage the viewport is showing
-    public static int stageNum = 1;
-
     public SampleType sampleType = SampleType.Yellow;
 
     @Override
@@ -155,6 +156,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         // Focal lengths (fx, fy) and principal point (cx, cy)
         double fx = 800; // Replace with your camera's focal length in pixels
         double fy = 800;
+
         double cx = VisionPipeline.CAMERA_WIDTH / 2.0; // Replace with your camera's principal point x-coordinate (usually image width / 2)
         double cy = VisionPipeline.CAMERA_HEIGHT / 2.0; // Replace with your camera's principal point y-coordinate (usually image height / 2)
 
@@ -185,7 +187,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         /*
          * Decide which buffer to send to the viewport
          */
-        switch (stages[stageNum])
+        switch (stages[VIEWPORT_STAGE_NUM])
         {
             case YCrCb:
             {
@@ -350,15 +352,13 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
 
         // Prepare object points and image points for solvePnP
         // Assuming the object is a rectangle with known dimensions
-        double objectWidth = 10.0;  // Replace with your object's width in real-world units (e.g., centimeters)
-        double objectHeight = 5.0;  // Replace with your object's height in real-world units
 
         // Define the 3D coordinates of the object corners in the object coordinate space
         MatOfPoint3f objectPoints = new MatOfPoint3f(
-                new Point3(-objectWidth / 2, -objectHeight / 2, 0),
-                new Point3(objectWidth / 2, -objectHeight / 2, 0),
-                new Point3(objectWidth / 2, objectHeight / 2, 0),
-                new Point3(-objectWidth / 2, objectHeight / 2, 0)
+                new Point3(-OBJECT_WIDTH / 2, -OBJECT_HEIGHT / 2, 0),
+                new Point3(OBJECT_WIDTH / 2, -OBJECT_HEIGHT / 2, 0),
+                new Point3(OBJECT_WIDTH / 2, OBJECT_HEIGHT / 2, 0),
+                new Point3(-OBJECT_WIDTH / 2, OBJECT_HEIGHT / 2, 0)
         );
 
         // Get the 2D image points from the detected rectangle corners
@@ -500,7 +500,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
 
     static void drawTagText(RotatedRect rect, String text, Mat mat, String color)
     {
-        Scalar colorScalar = getColorScalar(color);
+        Scalar colorScalar = getFontColorScalar(color);
 
         Imgproc.putText(
                 mat, // The buffer we're drawing on
@@ -523,7 +523,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         Point[] points = new Point[4];
         rect.points(points);
 
-        Scalar colorScalar = getColorScalar(color);
+        Scalar colorScalar = getFontColorScalar(color);
 
         for (int i = 0; i < 4; ++i)
         {
@@ -531,7 +531,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         }
     }
 
-    static Scalar getColorScalar(String color)
+    static Scalar getFontColorScalar(String color)
     {
         switch (color)
         {
