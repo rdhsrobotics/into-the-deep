@@ -251,11 +251,4 @@ abstract class SixSampleAutonomous(
     single("park near submersible") {
         navigateTo(submersiblePark)
     }
-}, {
-    if (instance.gamepad1.left_trigger > 0.1) {
-        it.activeY -= (it.opMode.gamepad1.left_trigger * 0.5).toInt()
-    }
-
-    it.opMode.telemetry.addLine("Target Y (Extension): ${it.activeY}")
-}
-)
+})
