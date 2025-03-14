@@ -9,9 +9,9 @@
 // before doing so.
 buildscript {
     repositories {
-        mavenCentral()
+//        mavenCentral()
         maven {
-            url = 'https://www.matthewo.tech/maven/'
+            url "https://repo.liftgate.io/artifactory/liftgate-robotics"
         }
     }
     dependencies {

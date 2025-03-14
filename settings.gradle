@@ -3,7 +3,7 @@ pluginManagement {
         mavenLocal()
         gradlePluginPortal()
         maven {
-            url "https://artifactory.scala.gg/artifactory/opensource"
+            url "https://repo.liftgate.io/artifactory/liftgate-robotics"
         }
     }
 }

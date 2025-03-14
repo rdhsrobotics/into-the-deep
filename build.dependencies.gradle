@@ -4,7 +4,7 @@ repositories {
     mavenLocal()
     maven { url = 'https://maven.brott.dev/' }
     maven { url = 'https://www.matthewo.tech/maven/' }
-    maven { url = "https://artifactory.scala.gg/artifactory/opensource" }
+    maven { url = "https://repo.liftgate.io/artifactory/liftgate-robotics" }
 }
 
 dependencies {
