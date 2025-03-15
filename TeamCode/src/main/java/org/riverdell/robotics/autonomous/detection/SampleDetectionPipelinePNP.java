@@ -71,22 +71,21 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
 
     public static double OBJECT_WIDTH = 10.0;  // Replace with your object's width in real-world units (e.g., centimeters)
     public static double OBJECT_HEIGHT = 5.0;  // Replace with your object's height in real-world units
-
-    // Keep track of what stage the viewport is showing
-    public static int VIEWPORT_STAGE_NUM = 1;
-
-    /*
-     * The elements we use for noise reduction
-     */
-    Mat erodeElement = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3.5, 3.5));
-    Mat dilateElement = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3.5, 3.5));
-
     /*
      * Colors
      */
     public static Scalar RED = new Scalar(191, 78, 980);
     public static Scalar BLUE = new Scalar(105, 112, 255);
     public static Scalar YELLOW = new Scalar(125, 125, 0);
+
+    // Keep track of what stage the viewport is showing
+    public static ViewportStage VIEWPORT_STAGE = ViewportStage.FINAL;
+
+    /*
+     * The elements we use for noise reduction
+     */
+    Mat erodeElement = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3.5, 3.5));
+    Mat dilateElement = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3.5, 3.5));
 
     public static class AnalyzedSample
     {
@@ -129,7 +128,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
     /*
      * Some stuff to handle returning our various buffers
      */
-    enum Stage
+    public enum ViewportStage
     {
         FINAL,
         YCrCb,
@@ -137,8 +136,6 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         MASKS_NR,
         CONTOURS;
     }
-
-    Stage[] stages = Stage.values();
 
     public SampleType sampleType = SampleType.Yellow;
 
@@ -187,7 +184,7 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         /*
          * Decide which buffer to send to the viewport
          */
-        switch (stages[VIEWPORT_STAGE_NUM])
+        switch (VIEWPORT_STAGE)
         {
             case YCrCb:
             {
