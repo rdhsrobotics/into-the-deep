@@ -9,7 +9,7 @@ import org.riverdell.robotics.autonomous.detection.SampleDetectionPipelinePNP
 import org.riverdell.robotics.autonomous.detection.VisionPipeline
 
 @TeleOp(
-    name = "Prepare Vision",
+    name = "\uD83D\uDEE0\uFE0F Prepare Vision",
     group = "Tests"
 )
 class PrepareVision : LinearOpMode() {

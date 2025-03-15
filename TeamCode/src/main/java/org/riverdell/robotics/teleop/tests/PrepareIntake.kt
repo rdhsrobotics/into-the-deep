@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import com.qualcomm.robotcore.hardware.Servo
 
 @TeleOp(
-    name = "Prepare Intake",
+    name = "\uD83D\uDEE0\uFE0F Prepare Intake",
     group = "Tests"
 )
 class PrepareIntake : LinearOpMode()

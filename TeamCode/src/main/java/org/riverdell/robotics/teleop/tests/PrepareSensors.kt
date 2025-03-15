@@ -7,11 +7,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit
 import org.riverdell.robotics.HypnoticRobotHardware
 
 @TeleOp(
-    name = "Sensor Validation",
+    name = "\uD83D\uDEE0\uFE0F Prepare Motor Encoders",
     group = "Tests"
 )
 @Disabled
-class SensorValidation : LinearOpMode()
+class PrepareSensors : LinearOpMode()
 {
     override fun runOpMode()
     {

@@ -7,7 +7,7 @@ import org.riverdell.robotics.autonomous.movement.geometry.Pose
 import org.riverdell.robotics.autonomous.movement.degrees
 import org.riverdell.robotics.autonomous.movement.navigateTo
 
-@Autonomous(name = "Test | Movement", group = "Test")
+@Autonomous(name = "\uD83E\uDD16 Movement", group = "Test")
 class TestMovement : HypnoticAuto({ opMode ->
     single("go to position") {
         (opMode.robot as HypnoticAutoRobot).visionPipeline.pause()

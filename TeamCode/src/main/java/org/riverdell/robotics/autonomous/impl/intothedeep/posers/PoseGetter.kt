@@ -1,6 +1,5 @@
 package org.riverdell.robotics.autonomous.impl.intothedeep.posers
 
-import android.icu.text.DecimalFormat
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import io.liftgate.robotics.mono.pipeline.single
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
@@ -11,7 +10,7 @@ import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
 import kotlin.math.pow
 import kotlin.math.round
 
-@Autonomous(name = "Pose Getter", group = "Test")
+@Autonomous(name = "\uD83D\uDEE0\uFE0F Prepare Pose", group = "Tests")
 class PoseGetter : HypnoticAuto({ opMode ->
     single("Outtake") {
         if (PoserConfig.outtakeEnabled) {

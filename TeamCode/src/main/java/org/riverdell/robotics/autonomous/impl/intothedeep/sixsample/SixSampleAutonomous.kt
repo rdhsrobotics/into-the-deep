@@ -32,8 +32,9 @@ abstract class SixSampleAutonomous(
     val submersibleInitialPose = Pose(-6.0, -52.0, 0.degrees)
     val submersibleInitialPoseSecondCycle = Pose(-6.0, -55.0, 0.degrees)
 
-    val submersibleIntermediate = Pose(16.5, -38.0, 60.degrees)
-    val submersibleRotatedIntermediate = Pose(8.5, -52.0, 0.degrees)
+    val submersibleIntermediate = Pose(-6.96, -47.05, 54.76.degrees)
+    val submersibleRotatedIntermediate = Pose(1.07, -54.27, 0.degrees)
+    val submersibleReturnIntermediate = Pose(-0.31, -44.64, 59.4.degrees)
     val submersiblePark = Pose(-18.0, -46.56, 180.degrees)
 
     val abortMoveBack = Pose(-6.0, -52.54, 0.degrees)
@@ -78,7 +79,7 @@ abstract class SixSampleAutonomous(
 
             navigateTo(submersibleRotatedIntermediate) {
                 withCustomTolerances(movingTolerance)
-                withAutomaticDeath(4000.0)
+                withAutomaticDeath(2000.0)
                 noStop(true)
             }
 
@@ -124,7 +125,7 @@ abstract class SixSampleAutonomous(
                 return@single
             }
 
-            navigateTo(submersibleIntermediate) {
+            navigateTo(submersibleReturnIntermediate) {
                 withCustomTolerances(movingTolerance)
                 withAutomaticDeath(3500.0)
                 noStop(true)

@@ -1,12 +1,11 @@
 package org.riverdell.robotics
 
 import com.qualcomm.hardware.lynx.LynxModule
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode
+import com.qualcomm.robotcore.hardware.CRServoImplEx
 import com.qualcomm.robotcore.hardware.DcMotor
 import com.qualcomm.robotcore.hardware.DcMotorEx
 import com.qualcomm.robotcore.hardware.DcMotorSimple
-import com.qualcomm.robotcore.hardware.IMU
 import com.qualcomm.robotcore.hardware.ServoImplEx
 import org.firstinspires.ftc.robotcontroller.internal.localization.GoBildaPinpointDriver
 import org.riverdell.robotics.subsystems.intake.IntakeState
@@ -46,8 +45,7 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
     lateinit var outtakeCoaxial: ServoImplEx
     lateinit var outtakeClaw: ServoImplEx
 
-//    lateinit var hangLeft: CRServoImplEx
-//    lateinit var hangRight: CRServoImplEx
+    lateinit var hangSecondary: CRServoImplEx
 
     fun initializeHardware() {
         val allHubs = opMode.hardwareMap.getAll(LynxModule::class.java)
@@ -103,6 +101,8 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
         extensionMotorLeft = opMode.hardwareMap["extendoLeft"] as DcMotorEx
         extensionMotorLeft.direction = DcMotorSimple.Direction.REVERSE
 
+        hangSecondary = opMode.hardwareMap["hangSecondary"] as CRServoImplEx
+
         extensionMotorRight = opMode.hardwareMap["extendoRight"] as DcMotorEx
         extensionMotorRight.direction = DcMotorSimple.Direction.FORWARD
 
@@ -149,11 +149,5 @@ class HypnoticRobotHardware(private val opMode: LinearOpMode) {
 
         intakeClawRight = opMode.hardwareMap.get(ServoImplEx::class.java, "intakeClawRight")
         intakeClawRight.position = IntakeState.Closed.positionRight
-
-        /*hangLeft = hardwareMap.get(CRServoImplEx::class.java, "hangLeft")
-        hangLeft.pwmRange = PwmRange(500.0, 2500.0)
-
-        hangRight = hardwareMap.get(CRServoImplEx::class.java, "hangRight")
-        hangRight.pwmRange = PwmRange(500.0, 2500.0)*/
     }
 }

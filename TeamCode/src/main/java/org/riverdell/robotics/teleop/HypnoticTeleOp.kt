@@ -153,14 +153,33 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                         }
                         .whenPressedOnce()
 
-                    where(ButtonType.ButtonY)
-                        .onlyWhen { intakeComposite.state == InteractionCompositeState.Hang }
+                    where(ButtonType.ButtonX)
+                        .onlyWhen { intakeComposite.state == InteractionCompositeState.HangIdled }
                         .triggers {
+                            teleOp.robot.lift.slides.idle()
+                            teleOp.robot.hardware.hangSecondary.power = -1.0
+                        }
+                        .andIsHeldUntilReleasedWhere {
+                            teleOp.robot.hardware.hangSecondary.power = 0.0
+                        }
+
+                    where(ButtonType.ButtonY)
+                        .onlyWhen { intakeComposite.state == InteractionCompositeState.HangIdled }
+                        .triggers {
+                            teleOp.robot.extension.slides.idle()
+                            teleOp.robot.hardware.extensionMotorLeft.power = -1.0
+                            teleOp.robot.hardware.extensionMotorRight.power = -1.0
+                        }
+                        .andIsHeldUntilReleasedWhere {
+                            teleOp.robot.hardware.extensionMotorLeft.power = 0.0
+                            teleOp.robot.hardware.extensionMotorRight.power = 0.0
+                        }
+                    /*.triggers {
                             teleOp.robot.extension.reconfigureForHang()
                             teleOp.robot.extension.extendToAndStayAt(90)
                             intakeComposite.state = InteractionCompositeState.HangComplete
                         }
-                        .whenPressedOnce()
+                        .whenPressedOnce()*/
                 }
             }
 

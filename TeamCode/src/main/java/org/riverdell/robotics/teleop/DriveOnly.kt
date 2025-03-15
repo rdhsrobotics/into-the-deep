@@ -1,15 +1,13 @@
-package org.riverdell.robotics.teleop.tests
+package org.riverdell.robotics.teleop
 
 import com.arcrobotics.ftclib.drivebase.MecanumDrive
 import com.arcrobotics.ftclib.hardware.motors.Motor
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit
-import org.riverdell.robotics.HypnoticRobotHardware
 
 @TeleOp(
-    name = "Drive Only",
-    group = "Tests"
+    name = "\uD83D\uDE97 Outreach",
+    group = "Drive"
 )
 class DriveOnly : LinearOpMode()
 {

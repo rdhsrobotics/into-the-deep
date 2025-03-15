@@ -6,10 +6,10 @@ import com.qualcomm.robotcore.hardware.Servo
 import org.riverdell.robotics.teleop.tests.config.ServoConfig
 
 @TeleOp(
-    name = "Servo Position Test",
+    name = "\uD83D\uDEE0\uFE0F Prepare Servo",
     group = "Tests"
 )
-class TestServo : LinearOpMode()
+class PrepareServo : LinearOpMode()
 {
     override fun runOpMode()
     {

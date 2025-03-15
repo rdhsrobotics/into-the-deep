@@ -5,6 +5,7 @@ import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.subsystems.intake.WristState
 import org.riverdell.robotics.subsystems.outtake.OuttakeLevel
+import org.riverdell.robotics.subsystems.slides.LiftConfig
 import org.riverdell.robotics.utilities.motionprofile.Constraint
 import java.util.concurrent.CompletableFuture
 
@@ -272,8 +273,8 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
     ) =
         stateMachineRestrict(InteractionCompositeState.Pickup, InteractionCompositeState.Confirm) {
             if (slowMode) {
-                opMode.robot.intakeV4B.leftRotation.constraints = Constraint.HALF.scale(5.5)
-                opMode.robot.intakeV4B.rightRotation.constraints = Constraint.HALF.scale(5.5)
+                opMode.robot.intakeV4B.leftRotation.constraints = Constraint.HALF.scale(10.5)
+                opMode.robot.intakeV4B.rightRotation.constraints = Constraint.HALF.scale(10.5)
             }
 
             (if (!noPick) intakeV4B.v4bSamplePickup() else CompletableFuture.completedFuture(null))
@@ -430,10 +431,11 @@ class CompositeInteraction(private val robot: HypnoticRobot) : AbstractSubsystem
 
     fun configureRobotForHang() = stateMachineRestrict(
         InteractionCompositeState.Rest,
-        InteractionCompositeState.Hang
+        InteractionCompositeState.HangIdled
     ) {
         intakeV4B.v4bIntermediate().thenAcceptAsync {
-            Thread.sleep(1000L)
+            Thread.sleep(250L)
+            lift.extendToAndStayAt(LiftConfig.MAX_EXTENSION)
             extension.extendToAndStayAt(400).join()
         }
     }

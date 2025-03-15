@@ -51,7 +51,7 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
         if (isolated) {
             opMode.robot.intakeComposite.prepareForPickup(
                 WristState.Lateral,
-                wideOpen = true,
+                wideOpen = false,
                 sampleScan = true,
                 submersibleOverride = 400
             ).join()
@@ -72,14 +72,14 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
                     )
                     .propagate(opMode)
 
-                Thread.sleep(200L)
+                Thread.sleep(400L)
                 MecanumTranslations
                     .getPowers(
                         Pose(-0.5, 0.0, 0.0),
                         0.0, 0.0, 0.0
                     )
                     .propagate(opMode)
-                Thread.sleep(100L)
+                Thread.sleep(150L)
 
                 MecanumTranslations
                     .getPowers(
@@ -87,9 +87,9 @@ fun RootExecutionGroup.visionIntake(opMode: HypnoticAuto, isolated: Boolean = fa
                         0.0, 0.0, 0.0
                     )
                     .propagate(opMode)
-                Thread.sleep(450L)
+                Thread.sleep(250L)
             } else {
-                Thread.sleep(600L)
+                Thread.sleep(300L)
             }
 
             clock.reset()

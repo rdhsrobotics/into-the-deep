@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.Servo
 import org.riverdell.robotics.teleop.tests.config.OuttakePrepareConfig
 
 @TeleOp(
-    name = "Prepare Outtake",
+    name = "\uD83D\uDEE0\uFE0F Prepare Outtake",
     group = "Tests"
 )
 class PrepareOuttake : LinearOpMode()

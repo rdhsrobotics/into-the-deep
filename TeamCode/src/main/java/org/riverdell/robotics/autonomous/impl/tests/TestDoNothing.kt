@@ -6,7 +6,7 @@ import org.riverdell.robotics.autonomous.HypnoticAuto
 import org.riverdell.robotics.autonomous.movement.PositionChangeAction
 import org.riverdell.robotics.autonomous.movement.geometry.Pose
 
-@Autonomous(name = "Test | Do Nothing", group = "Test")
+@Autonomous(name = "\uD83E\uDD16 Do Nothing", group = "Test")
 class DoNothing : HypnoticAuto({ opMode ->
     single("do nothing") {
         val targetPose = Pose()

@@ -9,7 +9,7 @@ import org.riverdell.robotics.autonomous.movement.degrees
 import org.riverdell.robotics.autonomous.movement.navigateToPosition
 import java.util.concurrent.atomic.AtomicInteger
 
-@Autonomous(name = "Test | BackTrack", group = "Test")
+@Autonomous(name = "\uD83E\uDD16 BackTrack", group = "Test")
 @Disabled
 class TestBackTrack : HypnoticAuto({ _ ->
     navigateToPosition(Pose(0.0, 20.0, 0.degrees))
