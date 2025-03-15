@@ -9,15 +9,13 @@ class Hang(private val robot: HypnoticRobot) : AbstractSubsystem()
     fun powered()
     {
         state = HangState.Powered
-//        robot.hardware.hangLeft.power = 1.0
-//        robot.hardware.hangRight.power = -1.0
+        robot.hardware.hangSecondary.power = -1.0
     }
 
     fun idle()
     {
         state = HangState.Idle
-//        robot.hardware.hangLeft.power = 0.0
-//        robot.hardware.hangRight.power = 0.0
+        robot.hardware.hangSecondary.power = 0.0
     }
 
     override fun doInitialize()

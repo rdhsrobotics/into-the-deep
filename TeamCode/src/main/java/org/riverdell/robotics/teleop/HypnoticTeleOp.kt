@@ -7,6 +7,7 @@ import org.riverdell.robotics.HypnoticOpMode
 import org.riverdell.robotics.HypnoticRobot
 import org.riverdell.robotics.subsystems.intake.composite.InteractionCompositeState
 import org.riverdell.robotics.subsystems.intake.composite.IntakeConfig
+import org.riverdell.robotics.subsystems.slides.Extension
 import org.riverdell.robotics.utilities.managed.ManagedMotorGroup
 import java.util.concurrent.Executors
 import kotlin.math.absoluteValue
@@ -57,6 +58,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
             val executor = Executors.newSingleThreadScheduledExecutor()
             executor.execute {
                 intakeComposite.state = InteractionCompositeState.InProgress
+
                 outtake.depositRotation().join()
                 outtake.depositCoaxial().join()
 
@@ -94,7 +96,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                             } else {
                                 extension.slides.supplyPowerToAll(
                                     (wantedPower.toDouble()
-                                        .pow(2) * sign(wantedPower.toDouble())) / 5
+                                        .pow(2) * sign(wantedPower.toDouble())) / 3
                                 )
                             }
                         } else {
@@ -103,7 +105,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                             } else {
                                 extension.slides.supplyPowerToAll(
                                     (wantedPower.toDouble()
-                                        .pow(2) * sign(wantedPower.toDouble())) / 5
+                                        .pow(2) * sign(wantedPower.toDouble())) / 3
                                 )
                             }
                         }
@@ -156,30 +158,35 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                     where(ButtonType.ButtonX)
                         .onlyWhen { intakeComposite.state == InteractionCompositeState.HangIdled }
                         .triggers {
-                            teleOp.robot.lift.slides.idle()
-                            teleOp.robot.hardware.hangSecondary.power = -1.0
+                            lift.slides.idle()
+                            hang.powered()
+                            intakeComposite.state = InteractionCompositeState.HangActivated
                         }
-                        .andIsHeldUntilReleasedWhere {
-                            teleOp.robot.hardware.hangSecondary.power = 0.0
+                        .whenPressedOnce()
+
+                    where(ButtonType.ButtonX)
+                        .onlyWhen { intakeComposite.state == InteractionCompositeState.HangActivated }
+                        .triggers {
+                            hang.idle()
+                            intakeComposite.state = InteractionCompositeState.HangIdled
                         }
+                        .whenPressedOnce()
 
                     where(ButtonType.ButtonY)
-                        .onlyWhen { intakeComposite.state == InteractionCompositeState.HangIdled }
+                        .onlyWhen { intakeComposite.state == InteractionCompositeState.HangActivated &&
+                                extension.extensionHangState == Extension.ExtensionHangState.Idle }
                         .triggers {
-                            teleOp.robot.extension.slides.idle()
-                            teleOp.robot.hardware.extensionMotorLeft.power = -1.0
-                            teleOp.robot.hardware.extensionMotorRight.power = -1.0
+                            extension.retractForHang()
                         }
-                        .andIsHeldUntilReleasedWhere {
-                            teleOp.robot.hardware.extensionMotorLeft.power = 0.0
-                            teleOp.robot.hardware.extensionMotorRight.power = 0.0
+                        .whenPressedOnce()
+
+                    where(ButtonType.ButtonY)
+                        .onlyWhen { intakeComposite.state == InteractionCompositeState.HangActivated &&
+                                extension.extensionHangState == Extension.ExtensionHangState.Powered }
+                        .triggers {
+                            extension.idleForHang()
                         }
-                    /*.triggers {
-                            teleOp.robot.extension.reconfigureForHang()
-                            teleOp.robot.extension.extendToAndStayAt(90)
-                            intakeComposite.state = InteractionCompositeState.HangComplete
-                        }
-                        .whenPressedOnce()*/
+                        .whenPressedOnce()
                 }
             }
 
@@ -201,7 +208,7 @@ abstract class HypnoticTeleOp(internal val solo: Boolean = false) : HypnoticOpMo
                 where(ButtonType.ButtonB)
                     .onlyWhen {
                         intakeComposite.state == InteractionCompositeState.OuttakeReady &&
-                                System.currentTimeMillis() - intakeComposite.lastRetransferInvocation >= 750L
+                                System.currentTimeMillis() - intakeComposite.lastRetransferInvocation >= 1000L
                     }
                     .triggers {
                         intakeComposite.reTransferOuttakeReady()

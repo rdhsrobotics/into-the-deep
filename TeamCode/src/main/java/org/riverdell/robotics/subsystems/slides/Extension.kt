@@ -61,4 +61,26 @@ class Extension(val robot: HypnoticRobot) : AbstractSubsystem()
 
     }
 
+    enum class ExtensionHangState {
+        Powered, Idle
+    }
+
+    var extensionHangState = ExtensionHangState.Idle
+
+    fun retractForHang() {
+        slides.idle()
+        robot.hardware.extensionMotorLeft.power = -1.0
+        robot.hardware.extensionMotorRight.power = -1.0
+
+        extensionHangState = ExtensionHangState.Powered
+    }
+
+    fun idleForHang() {
+        robot.hardware.extensionMotorLeft.power = 0.0
+        robot.hardware.extensionMotorRight.power = 0.0
+        slides.idle()
+
+        extensionHangState = ExtensionHangState.Idle
+    }
+
 }
