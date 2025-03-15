@@ -64,6 +64,9 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
     public static int BLUE_MASK_THRESHOLD = 160;
     public static int RED_MASK_THRESHOLD = 160;
 
+    public static int FOCAL_LENGTH_X = 800;
+    public static int FOCAL_LENGTH_Y = 800;
+
     public static double PICKUP_X_OFFSET = 1.15;
     public static double PICKUP_Y_OFFSET = 0.0;
 
@@ -151,8 +154,8 @@ public class SampleDetectionPipelinePNP implements CameraStreamSource, VisionPro
         // Replace these values with your actual camera calibration parameters
 
         // Focal lengths (fx, fy) and principal point (cx, cy)
-        double fx = 800; // Replace with your camera's focal length in pixels
-        double fy = 800;
+        double fx = FOCAL_LENGTH_X; // Replace with your camera's focal length in pixels
+        double fy = FOCAL_LENGTH_Y;
 
         double cx = VisionPipeline.CAMERA_WIDTH / 2.0; // Replace with your camera's principal point x-coordinate (usually image width / 2)
         double cy = VisionPipeline.CAMERA_HEIGHT / 2.0; // Replace with your camera's principal point y-coordinate (usually image height / 2)
