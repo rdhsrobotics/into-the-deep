@@ -16,7 +16,9 @@ class Drivetrain(private val robot: HypnoticRobot) : AbstractSubsystem() {
 
     private lateinit var backingDriveBase: MecanumDrive
 
-    fun voltage() = kotlin.runCatching { voltageState.current() }.getOrElse { 12.0 }
+    fun voltage() = kotlin
+        .runCatching { voltageState.current() }
+        .getOrElse { 13.0 }
 
     fun driveRobotCentric(driverOp: GamepadEx, scaleFactor: Double) {
         backingDriveBase.driveRobotCentric(

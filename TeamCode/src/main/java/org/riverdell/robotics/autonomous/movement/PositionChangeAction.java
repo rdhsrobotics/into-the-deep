@@ -32,8 +32,8 @@ public class PositionChangeAction {
 
     public static PIDCoefficients strafePID = new PIDCoefficients(0.25, 0.0, 0.02667);
     public static PIDCoefficients straightPID = new PIDCoefficients(0.21, 0.0, 0.033);
-    public static PIDCoefficients headingPID = new PIDCoefficients(1.45, 0.0, -0.135);
 
+    public static PIDCoefficients headingPID = new PIDCoefficients(1.45, 0.0, -0.135);
     public static PIDCoefficients extendoOutHeadingPID = new PIDCoefficients(1.375, 0.0, -0.165);
 
     public static double TURN_POWER_BOOST = -0.05;
