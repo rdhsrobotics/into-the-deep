@@ -62,7 +62,7 @@ public class PositionChangeAction {
     private double prevTime = 0.0;
     private @Nullable Pose previousPose = null;
 
-    private boolean telemetry = true;
+    private boolean telemetry = false;
     private boolean doNothing = false;
     private boolean noStop = false;
 
